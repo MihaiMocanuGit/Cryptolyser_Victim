@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.29)
 project(Cryptolyser_Victim C)
 
 set(CMAKE_C_STANDARD 11)
@@ -14,4 +14,8 @@ else()
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${GCC_LINK_FLAGS_DEBUG} ${GCC_LINK_LIBS_DEBUG}")
 endif()
 
+add_subdirectory(AES)
+
 add_executable(Cryptolyser_Victim main.c)
+
+target_link_libraries(Cryptolyser_Victim PRIVATE AES)

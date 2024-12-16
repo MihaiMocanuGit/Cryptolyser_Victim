@@ -1,0 +1,1 @@
+add_library(AES STATIC aes.h aes.c)
