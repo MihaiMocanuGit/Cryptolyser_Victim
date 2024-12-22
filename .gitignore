@@ -32,8 +32,6 @@
 *.app
 
 # IDE specific
-!.idea
-.idea/*
-!.idea/codeStyles
+.idea
 cmake-build-*
 build*
