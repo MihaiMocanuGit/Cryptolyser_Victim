@@ -22,18 +22,23 @@ void printHexLine(const char *line_label, unsigned char *input, uint32_t len)
 
 int main(int argc, char **argv)
 {
-    const unsigned short BROADCAST_PORT = 8081;
+    if (argc != 2)
+    {
+        fprintf(stderr, "Incorrect program parameter: <PORT>\n");
+        return EXIT_FAILURE;
+    }
+    const unsigned short BROADCAST_PORT = atoi(argv[1]);
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0)
     {
-        perror("Could not create UDP socket\n");
+        perror("Could not create UDP socket.\n");
         return EXIT_FAILURE;
     }
 
     int broadcast = 1;
     if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0)
     {
-        perror("Could not set Broadcast option\n");
+        perror("Could not set Broadcast option.\n");
         close(sock);
         return EXIT_FAILURE;
     }
@@ -64,7 +69,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    printf("Listening on port %u\n", BROADCAST_PORT);
+    printf("Listening on port %u.\n", BROADCAST_PORT);
     for (;;)
     {
 
