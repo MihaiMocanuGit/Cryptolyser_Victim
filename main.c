@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 #pragma pack(0)
 
         struct sockaddr_in sender_addr;
-        socklen_t sender_len;
+        socklen_t sender_len = sizeof(sender_addr);
         ssize_t receivedLength = recvfrom(sock, &packet, sizeof(packet), 0,
                                           (struct sockaddr *)&sender_addr, &sender_len);
         if (receivedLength < 0)
