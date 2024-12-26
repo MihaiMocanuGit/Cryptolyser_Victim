@@ -1,9 +1,7 @@
 #include "AES/aes.h"
+#include "ConnectionHandler/connection_handler.h"
 
-#include <errno.h>
 #include <netinet/in.h>
-#include <signal.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,32 +25,11 @@ int main(int argc, char **argv)
         fprintf(stderr, "Incorrect program parameter: <PORT>\n");
         return EXIT_FAILURE;
     }
-    const unsigned short BROADCAST_PORT = atoi(argv[1]);
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock < 0)
+    struct connection_t *server;
+    if (connection_init(&server, atoi(argv[1])))
     {
-        perror("Could not create UDP socket.\n");
-        return EXIT_FAILURE;
-    }
-
-    int broadcast = 1;
-    if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0)
-    {
-        perror("Could not set Broadcast option.\n");
-        close(sock);
-        return EXIT_FAILURE;
-    }
-
-    struct sockaddr_in recv_addr;
-    memset(&recv_addr, 0, sizeof(recv_addr));
-    recv_addr.sin_family = AF_INET;
-    recv_addr.sin_port = htons(BROADCAST_PORT);
-    recv_addr.sin_addr.s_addr = INADDR_ANY;
-
-    if (bind(sock, (struct sockaddr *)&recv_addr, sizeof(recv_addr)) < 0)
-    {
-        perror("Could not bind.\n");
-        close(sock);
+        perror("Could not initialize connection.\n");
+        connection_cleanup(&server);
         return EXIT_FAILURE;
     }
 
@@ -65,61 +42,20 @@ int main(int argc, char **argv)
     if (aes_init(key_data, key_data_len, /*(unsigned char *) &salt*/ NULL, en, de))
     {
         perror("Could not initialize AES cipher.\n");
-        close(sock);
-        return EXIT_FAILURE;
+        goto cleanup;
     }
 
-    printf("Listening on port %u.\n", BROADCAST_PORT);
+    printf("Listening on port %s.\n", argv[1]);
     for (;;)
     {
+        uint8_t plaintext[CONNECTION_DATA_MAX_SIZE];
+        uint64_t plaintext_len;
+        if (connection_receive_data_noalloc(server, plaintext, &plaintext_len))
+        {
+            perror("Could not receive data.\n");
+            goto cleanup;
+        }
 
-#pragma pack(1)
-        struct
-        {
-            uint64_t data_length;
-            uint8_t byteData[500];
-        } packet;
-#pragma pack(0)
-
-        struct sockaddr_in sender_addr;
-        socklen_t sender_len = sizeof(sender_addr);
-        ssize_t receivedLength = recvfrom(sock, &packet, sizeof(packet), 0,
-                                          (struct sockaddr *)&sender_addr, &sender_len);
-        if (receivedLength < 0)
-        {
-            perror("Could not receive byte data packet.\n");
-            close(sock);
-            EVP_CIPHER_CTX_free(en);
-            EVP_CIPHER_CTX_free(de);
-            return EXIT_FAILURE;
-        }
-        if ((uint64_t)receivedLength < sizeof(packet.data_length))
-        {
-            perror("Lost packet data, did not obtain the data length..\n");
-            close(sock);
-            EVP_CIPHER_CTX_free(en);
-            EVP_CIPHER_CTX_free(de);
-            return EXIT_FAILURE;
-        }
-        uint64_t plaintext_len = be64toh(packet.data_length);
-        if ((uint64_t)receivedLength < sizeof(packet.data_length) + plaintext_len)
-        {
-            perror("Lost packet data, did not obtain the whole byte data.\n");
-            close(sock);
-            EVP_CIPHER_CTX_free(en);
-            EVP_CIPHER_CTX_free(de);
-            return EXIT_FAILURE;
-        }
-        unsigned char *plaintext = malloc(plaintext_len);
-        if (!plaintext)
-        {
-            perror("Could not allocate enough space for the data.\n");
-            close(sock);
-            EVP_CIPHER_CTX_free(en);
-            EVP_CIPHER_CTX_free(de);
-            return EXIT_FAILURE;
-        }
-        memcpy(plaintext, packet.byteData, plaintext_len);
         printHexLine("Input:     \t", plaintext, plaintext_len);
         printf("Data size: %lu\n", plaintext_len);
 
@@ -136,32 +72,19 @@ int main(int argc, char **argv)
         volatile struct timespec outbound_time;
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, (struct timespec *)&outbound_time);
 
-#pragma pack(1)
-        struct
+        if (connection_respond_back(server, inbound_time, outbound_time))
         {
-            uint64_t inbound_sec;
-            uint64_t inbound_nsec;
-            uint64_t outbound_sec;
-            uint64_t outbound_nsec;
-        } timing = {.inbound_sec = htobe64(inbound_time.tv_sec),
-                    .inbound_nsec = htobe64(inbound_time.tv_nsec),
-                    .outbound_sec = htobe64(outbound_time.tv_sec),
-                    .outbound_nsec = htobe64(outbound_time.tv_nsec)};
-#pragma pack(0)
-
-        // Send time data back to the sender0
-        if (sendto(sock, &timing, sizeof(timing), 0, (struct sockaddr *)&sender_addr,
-                   sizeof(sender_addr)) < 0)
-        {
-            perror("Could not send timing data.\n");
-            close(sock);
-            EVP_CIPHER_CTX_free(en);
-            EVP_CIPHER_CTX_free(de);
-            free(plaintext);
-            return EXIT_FAILURE;
+            perror("Could not send back timing response.\n");
+            free((void *)ciphertext);
+            goto cleanup;
         }
 
-        free(plaintext);
+        free((void *)ciphertext);
     }
-    return 0;
+
+cleanup:
+    EVP_CIPHER_CTX_free(en);
+    EVP_CIPHER_CTX_free(de);
+    connection_cleanup(&server);
+    return EXIT_FAILURE;
 }
