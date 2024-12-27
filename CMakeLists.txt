@@ -7,7 +7,7 @@ if (WIN32)
     FATAL_ERROR("Windows is not supported.")
 endif (WIN32)
 
-find_package(OpenSSL REQUIRED)
+#find_package(OpenSSL REQUIRED)
 
 set(GCC_FLAGS_DEBUG "-O0 -Wall -Wextra -Wpedantic -Werror -Wno-unused-variable -Wno-unused-parameter -fsanitize=address,undefined")
 set(GCC_LINK_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=address,undefined")
@@ -17,7 +17,7 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${GCC_LINK_FLA
 
 add_subdirectory(AES)
 add_subdirectory(ConnectionHandler)
+add_subdirectory(include)
 
 add_executable(${PROJECT_NAME} main.c)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE AES ConnectionHandler OpenSSL::Crypto)
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::Crypto AES ConnectionHandler)
