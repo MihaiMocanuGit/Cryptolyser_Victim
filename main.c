@@ -25,6 +25,8 @@ int main(int argc, char **argv)
         fprintf(stderr, "Incorrect program parameter: <PORT>\n");
         return EXIT_FAILURE;
     }
+    printf("Using OPENSSL_VERSION: %lx (hex)\n", OPENSSL_VERSION_NUMBER);
+
     struct connection_t *server;
     if (connection_init(&server, atoi(argv[1])))
     {

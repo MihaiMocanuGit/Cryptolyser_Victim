@@ -7,8 +7,6 @@ if (WIN32)
     FATAL_ERROR("Windows is not supported.")
 endif (WIN32)
 
-#find_package(OpenSSL REQUIRED)
-
 set(GCC_FLAGS_DEBUG "-O0 -Wall -Wextra -Wpedantic -Werror -Wno-unused-variable -Wno-unused-parameter -fsanitize=address,undefined")
 set(GCC_LINK_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=address,undefined")
 
