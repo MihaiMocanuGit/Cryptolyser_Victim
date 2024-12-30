@@ -1,8 +1,8 @@
 #ifndef CRYPTOLYSER_VICTIM_AES_AES_H_
 #define CRYPTOLYSER_VICTIM_AES_AES_H_
 
-#include <openssl/aes.h>
-#include <openssl/evp.h>
+#include "openssl/aes.h"
+#include "openssl/evp.h"
 
 /**
  * Create a 128 bit key and IV using the supplied key_data. salt can be added

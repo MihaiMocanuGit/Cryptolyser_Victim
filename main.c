@@ -1,12 +1,9 @@
 #include "AES/aes.h"
 #include "ConnectionHandler/connection_handler.h"
 
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 void printHexLine(const char *line_label, unsigned char *input, uint32_t len)
 {
