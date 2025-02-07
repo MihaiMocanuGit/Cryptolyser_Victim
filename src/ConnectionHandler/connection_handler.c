@@ -1,5 +1,7 @@
 #include "connection_handler.h"
 
+#include "connection_data_types.h"
+
 #include <errno.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -14,24 +16,6 @@ struct connection_t
     struct sockaddr_in recv_addr;
     struct sockaddr_in sender_addr;
 };
-
-#pragma pack(1)
-struct connection_packet_t
-{
-    uint64_t data_length;
-    uint8_t byteData[CONNECTION_DATA_MAX_SIZE];
-};
-#pragma pack(0)
-
-#pragma pack(1)
-struct connection_timing_t
-{
-    uint64_t inbound_sec;
-    uint64_t inbound_nsec;
-    uint64_t outbound_sec;
-    uint64_t outbound_nsec;
-};
-#pragma pack(0)
 
 int connection_init(struct connection_t **connection, uint16_t port)
 {
@@ -85,8 +69,8 @@ int connection_reopen_socket(struct connection_t *connection)
     return 0;
 }
 
-int connection_receive_data_noalloc(struct connection_t *connection, uint8_t *data,
-                                    uint64_t *data_len)
+int connection_receive_data_noalloc(struct connection_t *connection, uint32_t *packet_id,
+                                    uint8_t *data, uint32_t *data_len)
 {
     struct connection_packet_t packet;
     socklen_t sender_len = sizeof(connection->sender_addr);
@@ -95,12 +79,14 @@ int connection_receive_data_noalloc(struct connection_t *connection, uint8_t *da
                  (struct sockaddr *)&connection->sender_addr, &sender_len) < 0)
         return errno;
 
-    *data_len = be64toh(packet.data_length);
-    memcpy(data, packet.byteData, *data_len);
+    *packet_id = be32toh(packet.packet_id);
+    *data_len = be32toh(packet.data_length);
+    memcpy(data, packet.byte_data, *data_len);
     return 0;
 }
 
-int connection_receive_data(struct connection_t *connection, uint8_t **data, uint64_t *data_len)
+int connection_receive_data(struct connection_t *connection, uint32_t *packet_id, uint8_t **data,
+                            uint32_t *data_len)
 {
     struct connection_packet_t packet;
     socklen_t sender_len = sizeof(connection->sender_addr);
@@ -109,20 +95,21 @@ int connection_receive_data(struct connection_t *connection, uint8_t **data, uin
                  (struct sockaddr *)&connection->sender_addr, &sender_len) < 0)
         return errno;
 
-    *data_len = be64toh(packet.data_length);
+    *packet_id = be32toh(packet.packet_id);
+    *data_len = be32toh(packet.data_length);
     errno = 0;
-    *data = malloc(*data_len);
-    if (!*data)
+    if (!(*data = malloc(*data_len)))
         return errno;
 
-    memcpy(data, packet.byteData, *data_len);
+    memcpy(data, packet.byte_data, *data_len);
     return 0;
 }
 
-int connection_respond_back(struct connection_t *connection, struct timespec inbound_time,
-                            struct timespec outbound_time)
+int connection_respond_back(struct connection_t *connection, uint32_t packet_id,
+                            struct timespec inbound_time, struct timespec outbound_time)
 {
-    struct connection_timing_t timing = {.inbound_sec = htobe64(inbound_time.tv_sec),
+    struct connection_timing_t timing = {.packet_id = htobe32(packet_id),
+                                         .inbound_sec = htobe64(inbound_time.tv_sec),
                                          .inbound_nsec = htobe64(inbound_time.tv_nsec),
                                          .outbound_sec = htobe64(outbound_time.tv_sec),
                                          .outbound_nsec = htobe64(outbound_time.tv_nsec)};

@@ -1,4 +1,5 @@
 #include "AES/aes.h"
+#include "ConnectionHandler/connection_data_types.h"
 #include "ConnectionHandler/connection_handler.h"
 
 #include <stdio.h>
@@ -48,15 +49,16 @@ int main(int argc, char **argv)
     for (;;)
     {
         uint8_t plaintext[CONNECTION_DATA_MAX_SIZE];
-        uint64_t plaintext_len;
-        if (connection_receive_data_noalloc(server, plaintext, &plaintext_len))
+        uint32_t plaintext_len;
+        uint32_t packet_id;
+        if (connection_receive_data_noalloc(server, &packet_id, plaintext, &plaintext_len))
         {
             perror("Could not receive data.\n");
             goto cleanup;
         }
 
         printHexLine("Input:     \t", plaintext, plaintext_len);
-        printf("Data size: %lu\n", plaintext_len);
+        printf("Packet: %u\t Data size: %u\n", packet_id, plaintext_len);
 
         // This will need further investigation, the compiler is actually free
         // to reorder this sequence. Find a way to stop it, volatile might not
@@ -71,7 +73,7 @@ int main(int argc, char **argv)
         volatile struct timespec outbound_time;
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, (struct timespec *)&outbound_time);
 
-        if (connection_respond_back(server, inbound_time, outbound_time))
+        if (connection_respond_back(server, 0, inbound_time, outbound_time))
         {
             perror("Could not send back timing response.\n");
             free((void *)ciphertext);
