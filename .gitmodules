@@ -1,0 +1,3 @@
+[submodule "Cryptolyser_Common"]
+	path = Cryptolyser_Common
+	url = git@github.com:MihaiMocanuGit/Cryptolyser_Common.git
