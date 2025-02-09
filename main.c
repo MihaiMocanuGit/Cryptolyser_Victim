@@ -1,6 +1,6 @@
 #include "AES/aes.h"
-#include "ConnectionHandler/connection_data_types.h"
 #include "ConnectionHandler/connection_handler.h"
+#include "Cryptolyser_Common/connection_data_types.h"
 
 #include <stdio.h>
 #include <stdlib.h>

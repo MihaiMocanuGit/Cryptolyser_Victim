@@ -1,6 +1,6 @@
 #include "connection_handler.h"
 
-#include "connection_data_types.h"
+#include "Cryptolyser_Common//connection_data_types.h"
 
 #include <errno.h>
 #include <netinet/in.h>

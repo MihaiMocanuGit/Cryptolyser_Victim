@@ -15,7 +15,8 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${GCC_LINK_FLA
 
 add_subdirectory(include)
 add_subdirectory(src)
+add_subdirectory(Cryptolyser_Common)
 
 add_executable(${PROJECT_NAME} main.c)
-target_include_directories(${PROJECT_NAME} PRIVATE src)
-target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::Crypto AES ConnectionHandler)
+target_include_directories(${PROJECT_NAME} PRIVATE src Cryptolyser_Common)
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::Crypto AES ConnectionHandler Cryptolyser_Common)

@@ -1,2 +1,2 @@
-add_library(ConnectionHandler STATIC connection_handler.h connection_handler.c
-        connection_data_types.h)
+add_library(ConnectionHandler STATIC connection_handler.h connection_handler.c)
+target_link_libraries(ConnectionHandler PUBLIC Cryptolyser_Common)
