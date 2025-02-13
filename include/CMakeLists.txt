@@ -1,9 +1,9 @@
 include(ExternalProject)
 
 #TODO: Move this to a config file.
-#set(OPENSSL_VER OpenSSL_1_1_0-stable)
+set(OPENSSL_VER OpenSSL_1_1_0-stable)
 #set(OPENSSL_VER openssl-3.0.0)
-set(OPENSSL_VER openssl-3.1.0)
+#set(OPENSSL_VER openssl-3.1.0)
 #set(OPENSSL_VER openssl-3.2.0)
 #set(OPENSSL_VER openssl-3.4.0)
 #TODO: Create a boolean in the config: IS_STATIC_LIB and construct the suffix appropriately.

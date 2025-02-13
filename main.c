@@ -1,4 +1,5 @@
 #include "AES/aes.h"
+#include "CacheFlush/cache_flush.h"
 #include "ConnectionHandler/connection_handler.h"
 #include "Cryptolyser_Common/connection_data_types.h"
 
@@ -36,7 +37,6 @@ int main(int argc, char **argv)
     EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
 
-    unsigned int salt[] = {12345, 54321};
     unsigned char key_data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
     int key_data_len = sizeof key_data;
     if (aes_init(key_data, key_data_len, /*(unsigned char *) &salt*/ NULL, en, de))
@@ -56,6 +56,8 @@ int main(int argc, char **argv)
             perror("Could not receive data.\n");
             goto cleanup;
         }
+
+        flush_cache();
 
         printHexLine("Input:     \t", plaintext, plaintext_len);
         printf("Packet: %u\t Data size: %u\n", packet_id, plaintext_len);
@@ -79,7 +81,6 @@ int main(int argc, char **argv)
             free((void *)ciphertext);
             goto cleanup;
         }
-
         free((void *)ciphertext);
     }
 
