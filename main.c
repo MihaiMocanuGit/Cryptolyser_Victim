@@ -66,14 +66,14 @@ int main(int argc, char **argv)
         // to reorder this sequence. Find a way to stop it, volatile might not
         // do the trick. Check compiler/memory barriers.
         volatile struct timespec inbound_time;
-        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, (struct timespec *)&inbound_time);
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&inbound_time);
 
         int ciphertext_len;
         volatile unsigned char *ciphertext =
             aes_encrypt(en, plaintext, plaintext_len, &ciphertext_len);
 
         volatile struct timespec outbound_time;
-        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, (struct timespec *)&outbound_time);
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&outbound_time);
 
         if (connection_respond_back(server, 0, inbound_time, outbound_time))
         {
