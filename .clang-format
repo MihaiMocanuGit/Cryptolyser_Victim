@@ -1,6 +1,10 @@
 ---
+# Do not directly edit this file from the project root, this is copied over from the git submodule Cryptolyser_Common.
+# Edit it in the submodule and (optionally) commit the change.
+
 BasedOnStyle: LLVM
 BreakBeforeBraces: Allman
+BreakTemplateDeclarations: Yes
 ColumnLimit: 100
 IncludeBlocks: Regroup
 IndentCaseLabels: true
