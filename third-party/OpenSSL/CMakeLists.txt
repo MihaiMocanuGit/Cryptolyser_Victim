@@ -36,9 +36,7 @@ if (NOT OPENSSL_FORCE_REBUILD AND EXISTS ${OPENSSL_INCLUDE_DIR}/openssl)
     set_property(TARGET OpenSSL::Crypto PROPERTY IMPORTED_LOCATION ${OPENSSL_LIBCRYPTO})
     set_property(TARGET OpenSSL::Crypto PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${OPENSSL_INCLUDE_DIR})
 else ()
-    # I cannot find out how to move this OpenSSL-prefix into ${CMAKE_CURRENT_BINARY_DIR}/${OPENSSL_VER}/.
-    # As a workaround, it will be deleted when a different version of openssl is needed
-    file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/OpenSSL-prefix)
+    message(STATUS "Could not find OpenSSL in: ${OPENSSL_INCLUDE_DIR}. A rebuild will happen...")
 
     ExternalProject_Add(
             OpenSSL
@@ -58,6 +56,7 @@ else ()
             TEST_COMMAND ""
             INSTALL_COMMAND make install
             INSTALL_DIR ${OPENSSL_INSTALL_DIR}
+            PREFIX ${CMAKE_CURRENT_BINARY_DIR}/${OPENSSL_VER}/Prefix
             LOG_DIR ${CMAKE_CURRENT_BINARY_DIR}/${OPENSSL_VER}/logs
             LOG_CONFIGURE ON
             LOG_BUILD ON
