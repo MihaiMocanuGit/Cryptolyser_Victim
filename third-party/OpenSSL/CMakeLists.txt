@@ -26,7 +26,7 @@ set(OPENSSL_LIBCRYPTO ${OPENSSL_INSTALL_DIR}/${OPENSSL_LIB_DIR_NAME}/libcrypto.$
 # If it's present, then the ExternalProject_Add() will not be called, and cmake will instead link directly to this
 # directory.
 if (NOT OPENSSL_FORCE_REBUILD AND EXISTS ${OPENSSL_INCLUDE_DIR}/openssl)
-    message(STATUS "The desired openssl appears to be present in: ${OPENSSL_INCLUDE_DIR}. Skipping rebuild...")
+    message(STATUS "The desired OpenSSL appears to be present in: ${OPENSSL_INCLUDE_DIR}. Skipping rebuild...")
 
     add_library(OpenSSL::SSL STATIC IMPORTED GLOBAL)
     set_property(TARGET OpenSSL::SSL PROPERTY IMPORTED_LOCATION ${OPENSSL_LIBSSL})

@@ -13,7 +13,7 @@ set(GCC_LINK_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=address,und
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GCC_FLAGS_DEBUG}")
 set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${GCC_LINK_FLAGS_DEBUG}")
 
-add_subdirectory(include)
+add_subdirectory(third-party)
 add_subdirectory(src)
 add_subdirectory(Cryptolyser_Common)
 set(SRC_LIBS AES CacheFlush ConnectionHandler Cryptolyser_Common)
