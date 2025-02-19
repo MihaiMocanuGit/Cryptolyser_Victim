@@ -3,6 +3,7 @@
 #include "ConnectionHandler/connection_handler.h"
 #include "Cryptolyser_Common/connection_data_types.h"
 
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,18 +63,19 @@ int main(int argc, char **argv)
         printHexLine("Input:     \t", plaintext, plaintext_len);
         printf("Packet: %u\t Data size: %u\n", packet_id, plaintext_len);
 
-        // This will need further investigation, the compiler is actually free
-        // to reorder this sequence. Find a way to stop it, volatile might not
-        // do the trick. Check compiler/memory barriers.
-        volatile struct timespec inbound_time;
+        // std::atomic_thread_fence will both be a compiler barrier (disallowing the compiler to
+        // reorder instructions across the barrier) and a CPU barrier for that given thread
+        // (disallowing the CPU to reorder instructions across the barrier)
+        atomic_thread_fence(memory_order_seq_cst);
+        struct timespec inbound_time;
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&inbound_time);
 
         int ciphertext_len;
-        volatile unsigned char *ciphertext =
-            aes_encrypt(en, plaintext, plaintext_len, &ciphertext_len);
+        unsigned char *ciphertext = aes_encrypt(en, plaintext, plaintext_len, &ciphertext_len);
 
-        volatile struct timespec outbound_time;
+        struct timespec outbound_time;
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&outbound_time);
+        atomic_thread_fence(memory_order_seq_cst);
 
         if (connection_respond_back(server, 0, inbound_time, outbound_time))
         {
