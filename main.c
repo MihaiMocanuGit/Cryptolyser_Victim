@@ -58,10 +58,8 @@ int main(int argc, char **argv)
             goto cleanup;
         }
 
+        printf("Packet Id: %u\t Data size: %u\n", packet_id, plaintext_len);
         flush_cache();
-
-        printHexLine("Input:     \t", plaintext, plaintext_len);
-        printf("Packet: %u\t Data size: %u\n", packet_id, plaintext_len);
 
         // std::atomic_thread_fence will both be a compiler barrier (disallowing the compiler to
         // reorder instructions across the barrier) and a CPU barrier for that given thread
