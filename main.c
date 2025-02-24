@@ -59,19 +59,22 @@ int main(int argc, char **argv)
         }
 
         printf("Packet Id: %u\t Data size: %u\n", packet_id, plaintext_len);
-        flush_cache();
-
-        // std::atomic_thread_fence will both be a compiler barrier (disallowing the compiler to
-        // reorder instructions across the barrier) and a CPU barrier for that given thread
-        // (disallowing the CPU to reorder instructions across the barrier)
+        // atomic_thread_fence will both be a compiler barrier (disallowing the compiler to reorder
+        // instructions across the barrier) and a CPU barrier for that given thread (disallowing
+        // the CPU to reorder instructions across the barrier).
         atomic_thread_fence(memory_order_seq_cst);
-        struct timespec inbound_time;
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&inbound_time);
-
+        // Flushing the cache to minimize possible timing interference from previous cached
+        // encryption runs.
+        flush_cache();
+        // Declaring input/output variables after the cache flush as the performance benefit might
+        // help in reducing timing noise.
+        unsigned char *ciphertext = malloc(plaintext_len + AES_BLOCK_SIZE);
         int ciphertext_len;
-        unsigned char *ciphertext = aes_encrypt(en, plaintext, plaintext_len, &ciphertext_len);
-
+        struct timespec inbound_time;
         struct timespec outbound_time;
+
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&inbound_time);
+        aes_encrypt(en, plaintext, plaintext_len, &ciphertext_len, &ciphertext);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&outbound_time);
         atomic_thread_fence(memory_order_seq_cst);
 

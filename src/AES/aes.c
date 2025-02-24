@@ -27,26 +27,23 @@ int aes_init(unsigned char *key_data, int key_data_len, unsigned char *salt, EVP
     return 0;
 }
 
-unsigned char *aes_encrypt(EVP_CIPHER_CTX *e, unsigned char *plaintext, int plaintext_len,
-                           int *ciphertext_len)
+void aes_encrypt(EVP_CIPHER_CTX *e, unsigned char *plaintext, int plaintext_len,
+                 int *ciphertext_len, unsigned char **ciphertext)
 {
     /* max ciphertext len for a n bytes of plaintext is n + AES_BLOCK_SIZE -1
      * bytes */
     int c_len = plaintext_len + AES_BLOCK_SIZE, f_len = 0;
-    unsigned char *ciphertext = malloc(c_len);
 
     /* allows reusing of 'e' for multiple encryption cycles */
     EVP_EncryptInit_ex(e, NULL, NULL, NULL, NULL);
 
     /* update ciphertext, c_len is filled with the length of ciphertext
      *generated, len is the size of plaintext in bytes */
-    EVP_EncryptUpdate(e, ciphertext, &c_len, plaintext, plaintext_len);
+    EVP_EncryptUpdate(e, *ciphertext, &c_len, plaintext, plaintext_len);
 
     /* update ciphertext with the final remaining bytes */
-    EVP_EncryptFinal_ex(e, ciphertext + c_len, &f_len);
-
+    EVP_EncryptFinal_ex(e, *ciphertext + c_len, &f_len);
     *ciphertext_len = c_len + f_len;
-    return ciphertext;
 }
 
 unsigned char *aes_decrypt(EVP_CIPHER_CTX *e, unsigned char *ciphertext, int ciphertext_len,
