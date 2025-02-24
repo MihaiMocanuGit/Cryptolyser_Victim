@@ -78,7 +78,7 @@ int main(int argc, char **argv)
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&outbound_time);
         atomic_thread_fence(memory_order_seq_cst);
 
-        if (connection_respond_back(server, 0, inbound_time, outbound_time))
+        if (connection_respond_back(server, packet_id, inbound_time, outbound_time))
         {
             perror("Could not send back timing response.\n");
             free((void *)ciphertext);
