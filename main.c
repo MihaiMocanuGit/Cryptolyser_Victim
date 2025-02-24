@@ -58,7 +58,7 @@ int main(int argc, char **argv)
             goto cleanup;
         }
 
-        printf("Packet Id: %u\t Data size: %u\n", packet_id, plaintext_len);
+        printf("Packet Id: %u\t Data size: %u", packet_id, plaintext_len);
         // atomic_thread_fence will both be a compiler barrier (disallowing the compiler to reorder
         // instructions across the barrier) and a CPU barrier for that given thread (disallowing
         // the CPU to reorder instructions across the barrier).
@@ -85,6 +85,9 @@ int main(int argc, char **argv)
             goto cleanup;
         }
         free((void *)ciphertext);
+
+        printf("\t %ld.%ld -> %ld.%ld\n", inbound_time.tv_sec, inbound_time.tv_nsec,
+               outbound_time.tv_sec, outbound_time.tv_nsec);
     }
 
 cleanup:
