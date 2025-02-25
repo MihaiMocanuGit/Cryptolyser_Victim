@@ -74,6 +74,11 @@ int main(int argc, char **argv)
         struct timespec outbound_time;
 
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&inbound_time);
+        // TODO: check if a cache flush would be beneficial between calls (note: substract the cache
+        //  flush time from the timing)
+        aes_encrypt(en, plaintext, plaintext_len, &ciphertext_len, &ciphertext);
+        aes_encrypt(en, plaintext, plaintext_len, &ciphertext_len, &ciphertext);
+        aes_encrypt(en, plaintext, plaintext_len, &ciphertext_len, &ciphertext);
         aes_encrypt(en, plaintext, plaintext_len, &ciphertext_len, &ciphertext);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&outbound_time);
         atomic_thread_fence(memory_order_seq_cst);
