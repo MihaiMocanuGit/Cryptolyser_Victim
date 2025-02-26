@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
 
-    unsigned char key_data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    unsigned char key_data[] = {127, 128, 129, 130, 131, 132, 133, 134, 135};
     int key_data_len = sizeof key_data;
     if (aes_init(key_data, key_data_len, /*(unsigned char *) &salt*/ NULL, en, de))
     {
