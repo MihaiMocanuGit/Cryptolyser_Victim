@@ -12,7 +12,7 @@ echo "Setting build options"
 time (cmake -DCMAKE_BUILD_TYPE="$build_type" -S . -B build-"$build_type" && echo "Building $build_type" && cmake --build build-"$build_type")
 
 echo "Running"
-build-"$build_type"/Cryptolyser_Victim 8081
+sudo nice -n -20 build-"$build_type"/Cryptolyser_Victim 8081
 
 #OPENSSL_armcap=0x1B: This forces OpenSSL to disable ARMv8 crypto extensions, effectively disabling hardware acceleration on ARM (including AES instructions on a Raspberry Pi 4).
 #OPENSSL_ia32cap="~0x200000200000000": Disables AES-NI on x86/x64 systems
