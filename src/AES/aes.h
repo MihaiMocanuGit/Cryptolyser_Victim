@@ -20,7 +20,7 @@ int aes_init(unsigned char *key_data, int key_data_len, unsigned char *salt, EVP
 /// @param ciphertext [out] Make sure that is has enough space to hold the ciphertext
 /// @return
 void aes_encrypt(EVP_CIPHER_CTX *e, unsigned char *plaintext, int plaintext_len,
-                 int *ciphertext_len, unsigned char **ciphertext);
+                 int *ciphertext_len, unsigned char *ciphertext);
 
 /*
  * Decrypt len bytes of ciphertext

@@ -68,7 +68,7 @@ int main(int argc, char **argv)
         flush_cache();
         // Declaring input/output variables after the cache flush as the performance benefit might
         // help in reducing timing noise.
-        unsigned char *ciphertext = malloc(plaintext_len + AES_BLOCK_SIZE);
+        unsigned char ciphertext[CONNECTION_DATA_MAX_SIZE + AES_BLOCK_SIZE];
         int ciphertext_len;
         struct timespec inbound_time;
         struct timespec outbound_time;
@@ -81,11 +81,8 @@ int main(int argc, char **argv)
         if (connection_respond_back(server, packet_id, inbound_time, outbound_time))
         {
             perror("Could not send back timing response.\n");
-            free((void *)ciphertext);
             goto cleanup;
         }
-        free((void *)ciphertext);
-
         printf("\t %ld.%ld -> %ld.%ld\n", inbound_time.tv_sec, inbound_time.tv_nsec,
                outbound_time.tv_sec, outbound_time.tv_nsec);
     }
