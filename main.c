@@ -73,8 +73,12 @@ int main(int argc, char **argv)
         struct timespec inbound_time;
         struct timespec outbound_time;
 
+        // Will encrypt only the first block of the plaintext, mimicking Bernstein's approach.
+        const uint8_t encryption_length =
+            plaintext_len < AES_BLOCK_SIZE ? plaintext_len : AES_BLOCK_SIZE;
+
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&inbound_time);
-        aes_encrypt(en, plaintext, plaintext_len, &ciphertext_len, ciphertext);
+        aes_encrypt(en, plaintext, encryption_length, &ciphertext_len, ciphertext);
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&outbound_time);
         atomic_thread_fence(memory_order_seq_cst);
 
