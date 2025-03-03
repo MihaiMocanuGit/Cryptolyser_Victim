@@ -18,8 +18,20 @@ void printHexLine(const char *line_label, unsigned char *input, uint32_t len)
     printf("\n");
 }
 
+#if defined __x86_64__
+extern unsigned int OPENSSL_ia32cap_P[];
+#define AESNI_CAPABLE (OPENSSL_ia32cap_P[1] & (1 << (57 - 32)))
+#endif
+
 int main(int argc, char **argv)
 {
+#if defined __x86_64__
+    if (AESNI_CAPABLE)
+        perror("Using AES-NI\n");
+    else
+        printf("Not using AES-NI\n");
+#endif
+
     if (argc != 2)
     {
         fprintf(stderr, "Incorrect program parameter: <PORT>\n");
