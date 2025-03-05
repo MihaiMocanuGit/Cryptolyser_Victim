@@ -1,5 +1,6 @@
 #include "cache_flush.h"
 
+#include <stdatomic.h>
 #include <stdlib.h>
 
 #if defined __aarch64__
@@ -28,6 +29,7 @@
 static volatile char cache[CACHE_SIZE];
 void flush_cache()
 {
+    atomic_thread_fence(memory_order_seq_cst);
     static size_t dummy_value = 0;
     // You can use this pragma to control how many times a loop should be unrolled. It must be
     // placed immediately before a for, while or do loop or a #pragma GCC ivdep, and applies only to
@@ -50,4 +52,57 @@ void flush_cache()
         size_t index = cache_line_start + CACHE_LINE_SIZE / 2;
         cache[index] = (char)(dummy_value++);
     }
+
+    // Allocating some cache line arrays in order to hopefully touch a few different memory
+    // regions (set associative cache).
+    volatile char *cache_line0 = malloc(CACHE_LINE_SIZE);
+    if (!cache_line0)
+        return;
+    cache_line0[CACHE_LINE_SIZE / 2] = cache[0 * CACHE_LINE_SIZE + CACHE_LINE_SIZE / 2];
+
+    volatile char *cache_line1 = malloc(CACHE_LINE_SIZE);
+    if (!cache_line1)
+        return;
+    cache_line1[CACHE_LINE_SIZE / 2] = cache[1 * CACHE_LINE_SIZE / 2 + CACHE_LINE_SIZE / 2];
+
+    volatile char *cache_line2 = malloc(CACHE_LINE_SIZE);
+    if (!cache_line2)
+        return;
+    cache_line2[CACHE_LINE_SIZE / 2] = cache[2 * CACHE_LINE_SIZE / 2 + CACHE_LINE_SIZE / 2];
+
+    volatile char *cache_line3 = malloc(CACHE_LINE_SIZE);
+    if (!cache_line3)
+        return;
+    cache_line3[CACHE_LINE_SIZE / 2] = cache[3 * CACHE_LINE_SIZE / 2 + CACHE_LINE_SIZE / 2];
+
+    volatile char *cache_line4 = malloc(CACHE_LINE_SIZE);
+    if (!cache_line4)
+        return;
+    cache_line4[CACHE_LINE_SIZE / 2] = cache[4 * CACHE_LINE_SIZE / 2 + CACHE_LINE_SIZE / 2];
+
+    volatile char *cache_line5 = malloc(CACHE_LINE_SIZE);
+    if (!cache_line5)
+        return;
+    cache_line5[CACHE_LINE_SIZE / 2] = cache[5 * CACHE_LINE_SIZE / 2 + CACHE_LINE_SIZE / 2];
+
+    volatile char *cache_line6 = malloc(CACHE_LINE_SIZE);
+    if (!cache_line6)
+        return;
+    cache_line6[CACHE_LINE_SIZE / 2] = cache[6 * CACHE_LINE_SIZE / 2 + CACHE_LINE_SIZE / 2];
+
+    volatile char *cache_line7 = malloc(CACHE_LINE_SIZE);
+    if (!cache_line7)
+        return;
+    cache_line7[CACHE_LINE_SIZE / 2] = cache[7 * CACHE_LINE_SIZE / 2 + CACHE_LINE_SIZE / 2];
+
+    // Freeing at the end as we don't want the os to reuse the same memory address.
+    // This is the main reason behind the memory barrier.
+    free((char *)cache_line0);
+    free((char *)cache_line1);
+    free((char *)cache_line2);
+    free((char *)cache_line3);
+    free((char *)cache_line4);
+    free((char *)cache_line6);
+    free((char *)cache_line7);
+    atomic_thread_fence(memory_order_seq_cst);
 }
