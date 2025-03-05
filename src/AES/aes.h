@@ -9,8 +9,7 @@
  *for taste. Fills in the encryption and decryption ctx objects and returns 0 on
  *success
  **/
-int aes_init(unsigned char *key_data, int key_data_len, unsigned char *salt, EVP_CIPHER_CTX *e_ctx,
-             EVP_CIPHER_CTX *d_ctx);
+int aes_init(unsigned char key[static 16], EVP_CIPHER_CTX *e_ctx, EVP_CIPHER_CTX *d_ctx);
 
 /// Encrypt len bytes of data. All data going in & out is considered binary (unsigned char[])
 /// @param e [in/out]

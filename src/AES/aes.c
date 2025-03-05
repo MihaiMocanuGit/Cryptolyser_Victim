@@ -1,28 +1,9 @@
 #include "aes.h"
 
-int aes_init(unsigned char *key_data, int key_data_len, unsigned char *salt, EVP_CIPHER_CTX *e_ctx,
-             EVP_CIPHER_CTX *d_ctx)
+int aes_init(unsigned char key[static 16], EVP_CIPHER_CTX *e_ctx, EVP_CIPHER_CTX *d_ctx)
 {
-    int i, nrounds = 5;
-    unsigned char key[32], iv[32];
-
-    /*
-     * Gen key & IV for AES 128 CBC mode. A SHA1 digest is used to hash the
-     * supplied key material. nrounds is the number of times the we hash the
-     * material. More rounds are more secure but slower.
-     */
-    i = EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), salt, key_data, key_data_len, nrounds, key,
-                       iv);
-    if (i != 16)
-    {
-        fprintf(stderr, "Key size is %d bits - should be 128 bits\n", i);
-        return EXIT_FAILURE;
-    }
-
-    EVP_CIPHER_CTX_init(e_ctx);
-    EVP_EncryptInit_ex(e_ctx, EVP_aes_128_cbc(), NULL, key, iv);
-    EVP_CIPHER_CTX_init(d_ctx);
-    EVP_DecryptInit_ex(d_ctx, EVP_aes_128_cbc(), NULL, key, iv);
+    EVP_EncryptInit_ex(e_ctx, EVP_aes_128_ecb(), NULL, key, NULL);
+    EVP_DecryptInit_ex(d_ctx, EVP_aes_128_ecb(), NULL, key, NULL);
 
     return 0;
 }
