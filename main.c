@@ -2,6 +2,7 @@
 #include "CacheFlush/cache_flush.h"
 #include "ConnectionHandler/connection_handler.h"
 #include "Cryptolyser_Common/connection_data_types.h"
+#include "Cryptolyser_Common/cycle_timer.h"
 
 #include <stdatomic.h>
 #include <stdio.h>
@@ -97,18 +98,16 @@ int main(int argc, char **argv)
         // help in reducing timing noise.
         unsigned char ciphertext[CONNECTION_DATA_MAX_SIZE + AES_BLOCK_SIZE];
         int ciphertext_len;
-        struct timespec inbound_time;
-        struct timespec outbound_time;
 
         // Will encrypt only the first block of the plaintext, mimicking Bernstein's approach.
         const uint8_t encryption_length =
             plaintext_len < AES_BLOCK_SIZE ? plaintext_len : AES_BLOCK_SIZE;
 
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&inbound_time);
+        const struct cycle_timer_t inbound_time = time_start();
 
         encrypt_no_optimize(en, plaintext, encryption_length, ciphertext, &ciphertext_len);
 
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&outbound_time);
+        const struct cycle_timer_t outbound_time = time_end();
         atomic_thread_fence(memory_order_seq_cst);
 
         if (connection_respond_back(server, packet_id, inbound_time, outbound_time))
@@ -116,8 +115,8 @@ int main(int argc, char **argv)
             perror("Could not send back timing response.\n");
             goto cleanup;
         }
-        printf("\t %ld.%ld -> %ld.%ld\n", inbound_time.tv_sec, inbound_time.tv_nsec,
-               outbound_time.tv_sec, outbound_time.tv_nsec);
+        printf("\t %ld.%ld -> %ld.%ld\n", inbound_time.t1, inbound_time.t2, outbound_time.t1,
+               outbound_time.t2);
     }
 
 cleanup:

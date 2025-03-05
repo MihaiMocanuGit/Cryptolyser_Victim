@@ -106,13 +106,13 @@ int connection_receive_data(struct connection_t *connection, uint32_t *packet_id
 }
 
 int connection_respond_back(struct connection_t *connection, uint32_t packet_id,
-                            struct timespec inbound_time, struct timespec outbound_time)
+                            struct cycle_timer_t inbound_time, struct cycle_timer_t outbound_time)
 {
     struct connection_timing_t timing = {.packet_id = htobe32(packet_id),
-                                         .inbound_sec = htobe64(inbound_time.tv_sec),
-                                         .inbound_nsec = htobe64(inbound_time.tv_nsec),
-                                         .outbound_sec = htobe64(outbound_time.tv_sec),
-                                         .outbound_nsec = htobe64(outbound_time.tv_nsec)};
+                                         .inbound_t1 = htobe64(inbound_time.t1),
+                                         .inbound_t2 = htobe64(inbound_time.t2),
+                                         .outbound_t1 = htobe64(outbound_time.t1),
+                                         .outbound_t2 = htobe64(outbound_time.t2)};
     errno = 0;
     if (sendto(connection->socket, &timing, sizeof(timing), 0,
                (struct sockaddr *)&connection->sender_addr, sizeof(connection->sender_addr)) < 0)
