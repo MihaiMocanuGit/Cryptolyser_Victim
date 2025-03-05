@@ -18,6 +18,21 @@ void printHexLine(const char *line_label, unsigned char *input, uint32_t len)
     printf("\n");
 }
 
+// Function used to disable optimisations to the block of code inside. Forcing inline in order to
+// not get a timing delay caused by the function call.
+static inline __attribute__((optimize("-O0"), always_inline)) void encrypt_no_optimize(
+    EVP_CIPHER_CTX *en, uint8_t plaintext[CONNECTION_DATA_MAX_SIZE], uint8_t encryption_length,
+    unsigned char ciphertext[CONNECTION_DATA_MAX_SIZE + AES_BLOCK_SIZE], int *ciphertext_len)
+{
+    // TODO: Call cache_flush in between encryption calls. Perhaps implement a calibration
+    //  function that either subtracts the encryption time from the outgoing timestamp or send
+    //  the processing time of cache_flush to the attacker through tcp (for example). If we care
+    //  about the time to run cache_flush, we should remove any heap allocated memory.
+    aes_encrypt(en, plaintext, encryption_length, ciphertext_len, ciphertext);
+    // Optimisations are not desired as the compiler could just remove the second aes_encrypt call.
+    aes_encrypt(en, plaintext, encryption_length, ciphertext_len, ciphertext);
+}
+
 #if defined __x86_64__
 extern unsigned int OPENSSL_ia32cap_P[];
 #define AESNI_CAPABLE (OPENSSL_ia32cap_P[1] & (1 << (57 - 32)))
@@ -90,7 +105,9 @@ int main(int argc, char **argv)
             plaintext_len < AES_BLOCK_SIZE ? plaintext_len : AES_BLOCK_SIZE;
 
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&inbound_time);
-        aes_encrypt(en, plaintext, encryption_length, &ciphertext_len, ciphertext);
+
+        encrypt_no_optimize(en, plaintext, encryption_length, ciphertext, &ciphertext_len);
+
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *)&outbound_time);
         atomic_thread_fence(memory_order_seq_cst);
 
