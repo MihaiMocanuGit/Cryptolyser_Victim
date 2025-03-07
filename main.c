@@ -1,4 +1,4 @@
-#include "AES/aes.h"
+#include "AES/aes_interface.h"
 #include "CacheFlush/cache_flush.h"
 #include "ConnectionHandler/connection_handler.h"
 #include "Cryptolyser_Common/connection_data_types.h"
@@ -7,7 +7,6 @@
 #include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 void printHexLine(const char *line_label, unsigned char *input, uint32_t len)
 {
@@ -19,26 +18,14 @@ void printHexLine(const char *line_label, unsigned char *input, uint32_t len)
     printf("\n");
 }
 
-#if defined __x86_64__
-extern unsigned int OPENSSL_ia32cap_P[];
-#define AESNI_CAPABLE (OPENSSL_ia32cap_P[1] & (1 << (57 - 32)))
-#endif
-
 int main(int argc, char **argv)
 {
-#if defined __x86_64__
-    if (AESNI_CAPABLE)
-        perror("Using AES-NI\n");
-    else
-        printf("Not using AES-NI\n");
-#endif
-
     if (argc != 2)
     {
         fprintf(stderr, "Incorrect program parameter: <PORT>\n");
         return EXIT_FAILURE;
     }
-    printf("Using OPENSSL_VERSION: %lx (hex)\n", OPENSSL_VERSION_NUMBER);
+    aes_log_status(stdout);
 
     struct connection_t *server;
     if (connection_init(&server, atoi(argv[1])))
@@ -48,12 +35,12 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
+    struct aes_ctx_t *en = aes_ctx();
+    struct aes_ctx_t *de = aes_ctx();
 
     unsigned char key_data[] = {127, 128, 129, 130, 131, 132, 133, 134,
                                 135, 136, 137, 138, 139, 140, 141, 142};
-    if (aes_init(key_data, en, de))
+    if (aes_init(en, de, key_data))
     {
         perror("Could not initialize AES cipher.\n");
         goto cleanup;
@@ -82,7 +69,7 @@ int main(int argc, char **argv)
         // Declaring input/output variables after the cache flush as the performance benefit might
         // help in reducing timing noise.
         unsigned char ciphertext[CONNECTION_DATA_MAX_SIZE + AES_BLOCK_SIZE];
-        int ciphertext_len;
+        size_t ciphertext_len;
 
         // Will encrypt only the first block of the plaintext, mimicking Bernstein's approach.
         const uint8_t encryption_length =
@@ -90,7 +77,7 @@ int main(int argc, char **argv)
 
         const struct cycle_timer_t inbound_time = time_start();
 
-        aes_encrypt(en, plaintext, encryption_length, &ciphertext_len, ciphertext);
+        aes_encrypt(en, plaintext, encryption_length, ciphertext, &ciphertext_len);
 
         const struct cycle_timer_t outbound_time = time_end();
         atomic_thread_fence(memory_order_seq_cst);
@@ -105,8 +92,8 @@ int main(int argc, char **argv)
     }
 
 cleanup:
-    EVP_CIPHER_CTX_free(en);
-    EVP_CIPHER_CTX_free(de);
+    aes_clean(en);
+    aes_clean(de);
     connection_cleanup(&server);
     return EXIT_FAILURE;
 }

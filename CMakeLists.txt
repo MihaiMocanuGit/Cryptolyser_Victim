@@ -20,4 +20,4 @@ set(SRC_LIBS AES CacheFlush ConnectionHandler Cryptolyser_Common)
 
 add_executable(${PROJECT_NAME} main.c)
 target_include_directories(${PROJECT_NAME} PRIVATE src Cryptolyser_Common)
-target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::Crypto ${SRC_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${SRC_LIBS})
