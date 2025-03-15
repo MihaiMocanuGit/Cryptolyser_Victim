@@ -37,7 +37,7 @@ void aes_decrypt(struct aes_ctx_t *decrypt_ctx, uint8_t *ciphertext, size_t ciph
     memcpy(plaintext, ciphertext, ciphertext_len);
     *plaintext_len = ciphertext_len;
     for (size_t text_block = 0; text_block < *plaintext_len; text_block += AES_BLOCK_SIZE)
-        AES_ECB_encrypt(&decrypt_ctx->ctx, plaintext + text_block);
+        AES_ECB_decrypt(&decrypt_ctx->ctx, plaintext + text_block);
 }
 
 void aes_clean(struct aes_ctx_t *ctx) { free(ctx); }
