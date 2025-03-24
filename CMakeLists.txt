@@ -7,7 +7,10 @@ if (WIN32)
     FATAL_ERROR("Windows is not supported.")
 endif (WIN32)
 
-set(GCC_FLAGS_DEBUG "-O0 -Wall -Wextra -Wpedantic -Werror -Wno-unused-variable -Wno-unused-parameter -fsanitize=address,undefined")
+set(ERRORS "-Wall -Wextra -Wpedantic")
+set(WARNINGS "-Wno-error=unused-variable -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-but-set-variable")
+
+set(GCC_FLAGS_DEBUG "-O0 ${ERRORS} ${WARNINGS} -fsanitize=address,undefined")
 set(GCC_LINK_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=address,undefined")
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GCC_FLAGS_DEBUG}")
