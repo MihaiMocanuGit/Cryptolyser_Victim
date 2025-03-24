@@ -15,7 +15,6 @@ void printHexLine(const char *line_label, unsigned char *input, uint32_t len)
     {
         printf("%02X ", (unsigned int)input[i]);
     }
-    printf("\n");
 }
 
 int main(int argc, char **argv)
@@ -82,7 +81,7 @@ int main(int argc, char **argv)
         const struct cycle_timer_t outbound_time = time_end();
         atomic_thread_fence(memory_order_seq_cst);
 
-        if (connection_respond_back(server, packet_id, inbound_time, outbound_time))
+        if (connection_respond_back(server, packet_id, ciphertext, inbound_time, outbound_time))
         {
             perror("Could not send back timing response.\n");
             goto cleanup;

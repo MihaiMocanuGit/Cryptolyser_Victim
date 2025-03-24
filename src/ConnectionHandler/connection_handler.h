@@ -1,6 +1,7 @@
 #ifndef CRYPTOLYSER_VICTIM_CONNECTIONHANDLER_CONNECTION_HANDLER_H
 #define CRYPTOLYSER_VICTIM_CONNECTIONHANDLER_CONNECTION_HANDLER_H
 
+#include "Cryptolyser_Common/connection_data_types.h"
 #include "Cryptolyser_Common/cycle_timer.h"
 
 #include <stdint.h>
@@ -13,6 +14,7 @@ int connection_receive_data(struct connection_t *connection, uint32_t *packet_id
 int connection_receive_data_noalloc(struct connection_t *connection, uint32_t *packet_id,
                                     uint8_t *data, uint32_t *data_len);
 int connection_respond_back(struct connection_t *connection, uint32_t packet_id,
+                            uint8_t data[static PACKET_RESPONSE_DATA_SIZE],
                             struct cycle_timer_t inbound_time, struct cycle_timer_t outbound_time);
 void connection_close(struct connection_t *connection);
 

@@ -106,18 +106,19 @@ int connection_receive_data(struct connection_t *connection, uint32_t *packet_id
 }
 
 int connection_respond_back(struct connection_t *connection, uint32_t packet_id,
+                            uint8_t data[static PACKET_RESPONSE_DATA_SIZE],
                             struct cycle_timer_t inbound_time, struct cycle_timer_t outbound_time)
 {
-    struct connection_timing_t timing = {.packet_id = htobe32(packet_id),
-                                         .inbound_t1 = htobe64(inbound_time.t1),
-                                         .inbound_t2 = htobe64(inbound_time.t2),
-                                         .outbound_t1 = htobe64(outbound_time.t1),
-                                         .outbound_t2 = htobe64(outbound_time.t2)};
+    struct connection_response_t timing = {.packet_id = htobe32(packet_id),
+                                           .inbound_t1 = htobe64(inbound_time.t1),
+                                           .inbound_t2 = htobe64(inbound_time.t2),
+                                           .outbound_t1 = htobe64(outbound_time.t1),
+                                           .outbound_t2 = htobe64(outbound_time.t2)};
+    memcpy(timing.data, data, PACKET_RESPONSE_DATA_SIZE);
     errno = 0;
     if (sendto(connection->socket, &timing, sizeof(timing), 0,
                (struct sockaddr *)&connection->sender_addr, sizeof(connection->sender_addr)) < 0)
         return errno;
-
     return 0;
 }
 
