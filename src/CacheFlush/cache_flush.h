@@ -1,6 +1,6 @@
 #ifndef CRYPTOLYSER_VICTIM_CACHE_FLUSH_H
 #define CRYPTOLYSER_VICTIM_CACHE_FLUSH_H
 
-void flush_cache();
+void flush_cache(void);
 
 #endif // CRYPTOLYSER_VICTIM_CACHE_FLUSH_H

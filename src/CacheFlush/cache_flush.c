@@ -30,7 +30,7 @@
 #endif
 
 static volatile char cache[CACHE_SIZE];
-void flush_cache()
+void flush_cache(void)
 {
     atomic_thread_fence(memory_order_seq_cst);
     static size_t dummy_value = 0;
@@ -58,14 +58,17 @@ void flush_cache()
     // Allocating some cache line arrays in order to hopefully touch a few different memory
     // regions (set associative cache).
     volatile char **cache_lines = calloc(HEAP_CACHE_LINES, sizeof(char *));
-    for (int i = 0; i < HEAP_CACHE_LINES; ++i)
+    for (size_t i = 0; i < HEAP_CACHE_LINES; ++i)
     {
-        cache_lines[i] = malloc(CACHE_LINE_SIZE);
+        cache_lines[i] = malloc(CACHE_LINE_SIZE * 3);
         if (!cache_lines[i])
             goto cleanup;
-        cache_lines[i][CACHE_LINE_SIZE / 2] = cache[i * CACHE_LINE_SIZE + CACHE_LINE_SIZE / 2];
+        size_t arbitrary_index = i * CACHE_LINE_SIZE + CACHE_LINE_SIZE / 2;
+        cache_lines[i][0 * CACHE_LINE_SIZE + CACHE_LINE_SIZE / 2] = cache[arbitrary_index / 4];
+        cache_lines[i][1 * CACHE_LINE_SIZE + CACHE_LINE_SIZE / 2] = cache[arbitrary_index / 2];
+        cache_lines[i][2 * CACHE_LINE_SIZE + CACHE_LINE_SIZE / 2] = cache[arbitrary_index / 1];
     }
-// Freeing after all the malloc calls have been executed as we don't want the OS to reuse the
+// Freeing only after all the malloc calls have been executed as we don't want the OS to reuse the
 // same memory addresses. This is the main reason behind the memory barrier.
 cleanup:
     for (int i = 0; i < HEAP_CACHE_LINES; ++i)

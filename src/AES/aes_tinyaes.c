@@ -10,7 +10,7 @@ struct aes_ctx_t
     struct AES_ctx ctx;
 };
 
-struct aes_ctx_t *aes_ctx() { return calloc(1, sizeof(struct aes_ctx_t)); }
+struct aes_ctx_t *aes_ctx(void) { return calloc(1, sizeof(struct aes_ctx_t)); }
 
 int aes_init(struct aes_ctx_t *encrypt_ctx, struct aes_ctx_t *decrypt_ctx, uint8_t key[static 16])
 {
