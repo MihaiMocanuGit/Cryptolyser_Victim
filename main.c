@@ -7,8 +7,9 @@
 #include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-void printHexLine(const char *line_label, unsigned char *input, uint32_t len)
+static void printHexLine(const char *line_label, uint8_t *input, uint32_t len)
 {
     printf("%s", line_label);
     for (uint32_t i = 0; i < len; ++i)
@@ -17,11 +18,24 @@ void printHexLine(const char *line_label, unsigned char *input, uint32_t len)
     }
 }
 
+static void parseKey(const char *keyStr, uint8_t key[static PACKET_KEY_BYTE_SIZE])
+{
+    char *keyTok = strdup(keyStr);
+    char *value = strtok(keyTok, " ");
+    unsigned index = 0;
+    while (value)
+    {
+        key[index++] = strtoul(value, NULL, 16);
+        value = strtok(NULL, " ");
+    }
+    free(keyTok);
+}
+
 int main(int argc, char **argv)
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        fprintf(stderr, "Incorrect program parameter: <PORT>\n");
+        fprintf(stderr, "Incorrect program parameter: <PORT> <KEY>\n");
         return EXIT_FAILURE;
     }
     aes_log_status(stdout);
@@ -34,11 +48,14 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+    uint8_t key_data[PACKET_KEY_BYTE_SIZE];
+    parseKey(argv[2], key_data);
+    printHexLine("Key: ", key_data, PACKET_KEY_BYTE_SIZE);
+    printf("\n");
+
     struct aes_ctx_t *en = aes_ctx();
     struct aes_ctx_t *de = aes_ctx();
 
-    unsigned char key_data[] = {127, 128, 129, 130, 131, 132, 133, 134,
-                                135, 136, 137, 138, 139, 140, 141, 142};
     if (aes_init(en, de, key_data))
     {
         perror("Could not initialize AES cipher.\n");
@@ -67,7 +84,7 @@ int main(int argc, char **argv)
         flush_cache();
         // Declaring input/output variables after the cache flush as the performance benefit might
         // help in reducing timing noise.
-        unsigned char ciphertext[CONNECTION_DATA_MAX_SIZE + AES_BLOCK_SIZE];
+        uint8_t ciphertext[CONNECTION_DATA_MAX_SIZE + AES_BLOCK_SIZE];
         size_t ciphertext_len;
 
         // Will encrypt only the first block of the plaintext, mimicking Bernstein's approach.
