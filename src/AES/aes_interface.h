@@ -1,9 +1,10 @@
 #ifndef CRYPTOLYSER_VICTIM_AES_AES_H_
 #define CRYPTOLYSER_VICTIM_AES_AES_H_
 
-#define AES_BLOCK_SIZE 16
 #include <stdint.h>
 #include <stdio.h>
+
+#define AES_BLOCK_SIZE 16
 
 struct aes_ctx_t;
 

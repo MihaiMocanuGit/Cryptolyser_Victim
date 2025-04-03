@@ -23,9 +23,9 @@ int aes_init(struct aes_ctx_t *encrypt_ctx, struct aes_ctx_t *decrypt_ctx, uint8
 void aes_encrypt(struct aes_ctx_t *encrypt_ctx, uint8_t *plaintext, size_t plaintext_len,
                  uint8_t *ciphertext, size_t *ciphertext_len)
 {
-
     memcpy(ciphertext, plaintext, plaintext_len);
-    *ciphertext_len = plaintext_len + plaintext_len % AES_BLOCK_SIZE;
+    *ciphertext_len =
+        plaintext_len + (AES_BLOCK_SIZE - plaintext_len % AES_BLOCK_SIZE) % AES_BLOCK_SIZE;
     for (size_t cipher_block = 0; cipher_block < *ciphertext_len; cipher_block += AES_BLOCK_SIZE)
         AES_ECB_encrypt(&encrypt_ctx->ctx, ciphertext + cipher_block);
 }
@@ -33,7 +33,6 @@ void aes_encrypt(struct aes_ctx_t *encrypt_ctx, uint8_t *plaintext, size_t plain
 void aes_decrypt(struct aes_ctx_t *decrypt_ctx, uint8_t *ciphertext, size_t ciphertext_len,
                  uint8_t *plaintext, size_t *plaintext_len)
 {
-
     memcpy(plaintext, ciphertext, ciphertext_len);
     *plaintext_len = ciphertext_len;
     for (size_t text_block = 0; text_block < *plaintext_len; text_block += AES_BLOCK_SIZE)
