@@ -1,5 +1,7 @@
 #include "connection_handler.h"
 
+#include "Cryptolyser_Common/connection_data_types.h"
+
 #include <errno.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -105,7 +107,8 @@ int connection_receive_data(struct connection_t *connection, uint32_t *packet_id
 
 int connection_respond_back(struct connection_t *connection, uint32_t packet_id,
                             uint8_t data[static PACKET_RESPONSE_DATA_SIZE],
-                            struct cycle_timer_t inbound_time, struct cycle_timer_t outbound_time)
+                            struct cycle_timer_t inbound_time, struct cycle_timer_t outbound_time,
+                            uint8_t iv[static AES_BLOCK_BYTE_SIZE])
 {
     struct connection_response_t timing = {.packet_id = htobe32(packet_id),
                                            .inbound_t1 = htobe64(inbound_time.t1),
@@ -113,6 +116,7 @@ int connection_respond_back(struct connection_t *connection, uint32_t packet_id,
                                            .outbound_t1 = htobe64(outbound_time.t1),
                                            .outbound_t2 = htobe64(outbound_time.t2)};
     memcpy(timing.data, data, PACKET_RESPONSE_DATA_SIZE);
+    memcpy(timing.iv, iv, AES_BLOCK_BYTE_SIZE);
     errno = 0;
     if (sendto(connection->socket, &timing, sizeof(timing), 0,
                (struct sockaddr *)&connection->sender_addr, sizeof(connection->sender_addr)) < 0)

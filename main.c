@@ -6,9 +6,11 @@
 
 #include <assert.h>
 #include <stdatomic.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 static void printHexLine(const char *line_label, uint8_t *input, uint32_t len)
 {
@@ -32,6 +34,12 @@ static void parseKey(const char *keyStr, uint8_t key[static PACKET_KEY_BYTE_SIZE
     free(keyTok);
 }
 
+static void fillRandom(uint8_t *data, size_t len)
+{
+    for (size_t i = 0; i < len; ++i)
+        data[i] = rand() % 256;
+}
+
 int main(int argc, char **argv)
 {
     if (argc != 3)
@@ -39,6 +47,8 @@ int main(int argc, char **argv)
         fprintf(stderr, "Incorrect program parameter: <PORT> <KEY>\n");
         return EXIT_FAILURE;
     }
+    srand(time(NULL));
+
     aes_log_status(stdout);
 
     struct connection_t *server;
@@ -74,10 +84,13 @@ int main(int argc, char **argv)
             perror("Could not receive data.\n");
             goto cleanup;
         }
-        uint8_t iv[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        uint8_t iv[AES_BLOCK_BYTE_SIZE];
+        fillRandom(iv, AES_BLOCK_BYTE_SIZE);
         aes_set_iv(en, iv);
         aes_set_iv(de, iv);
+
         printf("Packet Id: %u\t Data size: %u", packet_id, plaintext_len);
+        printHexLine("\t IV: ", iv, AES_BLOCK_BYTE_SIZE);
         // atomic_thread_fence will both be a compiler barrier (disallowing the compiler to reorder
         // instructions across the barrier) and a CPU barrier for that given thread (disallowing
         // the CPU to reorder instructions across the barrier).
@@ -101,7 +114,7 @@ int main(int argc, char **argv)
         const struct cycle_timer_t outbound_time = time_end();
         atomic_thread_fence(memory_order_seq_cst);
 
-        if (connection_respond_back(server, packet_id, ciphertext, inbound_time, outbound_time))
+        if (connection_respond_back(server, packet_id, ciphertext, inbound_time, outbound_time, iv))
         {
             perror("Could not send back timing response.\n");
             goto cleanup;
