@@ -4,6 +4,7 @@
 #include "Cryptolyser_Common/connection_data_types.h"
 #include "Cryptolyser_Common/cycle_timer.h"
 
+#include <assert.h>
 #include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -105,6 +106,11 @@ int main(int argc, char **argv)
         }
         printf("\t %ld.%ld -> %ld.%ld\n", inbound_time.t1, inbound_time.t2, outbound_time.t1,
                outbound_time.t2);
+        uint8_t decrypted_plaintext[CONNECTION_DATA_MAX_SIZE];
+        size_t decrypted_len;
+        aes_decrypt(de, ciphertext, ciphertext_len, decrypted_plaintext, &decrypted_len);
+        assert(plaintext_len <= decrypted_len);
+        assert(memcmp(decrypted_plaintext, plaintext, plaintext_len));
     }
 
 cleanup:
