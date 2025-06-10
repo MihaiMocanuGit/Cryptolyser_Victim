@@ -13,6 +13,8 @@ struct aes_ctx_t *aes_ctx(void);
 int aes_init(struct aes_ctx_t *encrypt_ctx, struct aes_ctx_t *decrypt_ctx,
              uint8_t key[static AES_BLOCK_SIZE]);
 
+int aes_set_iv(struct aes_ctx_t *ctx, const uint8_t iv[static 16]);
+
 /// Encrypt len bytes of data. All data going in & out is considered binary
 /// @param encrypt_ctx [in/out]
 /// @param plaintext [in]

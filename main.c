@@ -74,7 +74,9 @@ int main(int argc, char **argv)
             perror("Could not receive data.\n");
             goto cleanup;
         }
-
+        uint8_t iv[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        aes_set_iv(en, iv);
+        aes_set_iv(de, iv);
         printf("Packet Id: %u\t Data size: %u", packet_id, plaintext_len);
         // atomic_thread_fence will both be a compiler barrier (disallowing the compiler to reorder
         // instructions across the barrier) and a CPU barrier for that given thread (disallowing

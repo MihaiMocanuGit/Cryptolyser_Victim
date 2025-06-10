@@ -14,10 +14,16 @@ struct aes_ctx_t *aes_ctx(void) { return calloc(1, sizeof(struct aes_ctx_t)); }
 
 int aes_init(struct aes_ctx_t *encrypt_ctx, struct aes_ctx_t *decrypt_ctx, uint8_t key[static 16])
 {
-    uint8_t iv[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    uint8_t iv[16] = {0};
     AES_init_ctx_iv(&encrypt_ctx->ctx, key, iv);
     AES_init_ctx_iv(&decrypt_ctx->ctx, key, iv);
 
+    return 0;
+}
+
+int aes_set_iv(struct aes_ctx_t *ctx, const uint8_t iv[static 16])
+{
+    AES_ctx_set_iv(&ctx->ctx, iv);
     return 0;
 }
 
