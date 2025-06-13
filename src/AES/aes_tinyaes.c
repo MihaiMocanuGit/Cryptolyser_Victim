@@ -33,7 +33,7 @@ void aes_encrypt(struct aes_ctx_t *encrypt_ctx, uint8_t *plaintext, size_t plain
     memcpy(ciphertext, plaintext, plaintext_len);
     *ciphertext_len =
         plaintext_len + (AES_BLOCK_SIZE - plaintext_len % AES_BLOCK_SIZE) % AES_BLOCK_SIZE;
-    AES_CBC_encrypt_buffer(&encrypt_ctx->ctx, ciphertext, *ciphertext_len);
+    AES_CTR_xcrypt_buffer(&encrypt_ctx->ctx, ciphertext, *ciphertext_len);
 }
 
 void aes_decrypt(struct aes_ctx_t *decrypt_ctx, uint8_t *ciphertext, size_t ciphertext_len,
@@ -41,7 +41,7 @@ void aes_decrypt(struct aes_ctx_t *decrypt_ctx, uint8_t *ciphertext, size_t ciph
 {
     memcpy(plaintext, ciphertext, ciphertext_len);
     *plaintext_len = ciphertext_len;
-    AES_CBC_decrypt_buffer(&decrypt_ctx->ctx, ciphertext, ciphertext_len);
+    AES_CTR_xcrypt_buffer(&decrypt_ctx->ctx, plaintext, *plaintext_len);
 }
 
 void aes_clean(struct aes_ctx_t *ctx) { free(ctx); }

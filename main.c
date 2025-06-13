@@ -65,9 +65,9 @@ int main(int argc, char **argv)
     printf("\n");
 
     struct aes_ctx_t *en = aes_ctx();
-    struct aes_ctx_t *de = aes_ctx();
+    struct aes_ctx_t *dummy_ctx = aes_ctx();
 
-    if (aes_init(en, de, key_data))
+    if (aes_init(en, dummy_ctx, key_data))
     {
         perror("Could not initialize AES cipher.\n");
         goto cleanup;
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
         uint8_t iv[AES_BLOCK_BYTE_SIZE];
         fillRandom(iv, AES_BLOCK_BYTE_SIZE);
         aes_set_iv(en, iv);
-        aes_set_iv(de, iv);
+        aes_set_iv(dummy_ctx, iv);
 
         printf("Packet Id: %u\t Data size: %u", packet_id, plaintext_len);
         printHexLine("\t IV: ", iv, AES_BLOCK_BYTE_SIZE);
@@ -123,14 +123,14 @@ int main(int argc, char **argv)
                outbound_time.t2);
         uint8_t decrypted_plaintext[CONNECTION_DATA_MAX_SIZE];
         size_t decrypted_len;
-        aes_decrypt(de, ciphertext, ciphertext_len, decrypted_plaintext, &decrypted_len);
+        aes_decrypt(en, ciphertext, ciphertext_len, decrypted_plaintext, &decrypted_len);
         assert(plaintext_len <= decrypted_len);
         assert(memcmp(decrypted_plaintext, plaintext, plaintext_len));
     }
 
 cleanup:
     aes_clean(en);
-    aes_clean(de);
+    aes_clean(dummy_ctx);
     connection_cleanup(&server);
     return EXIT_FAILURE;
 }
