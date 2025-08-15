@@ -11,13 +11,14 @@ struct connection_t;
 int connection_init(struct connection_t **connection, uint16_t port);
 
 int connection_receive_data(struct connection_t *connection, uint32_t *packet_id, uint8_t **data,
-                            uint32_t *data_len);
+                            uint32_t *data_len, enum packet_type_e *aes_type);
 
 int connection_receive_data_noalloc(struct connection_t *connection, uint32_t *packet_id,
-                                    uint8_t *data, uint32_t *data_len);
+                                    uint8_t *data, uint32_t *data_len,
+                                    enum packet_type_e *aes_type);
 
 int connection_respond_back(struct connection_t *connection, uint32_t packet_id,
-                            uint8_t data[static PACKET_RESPONSE_DATA_SIZE],
+                            uint8_t data[static RESPONSE_DATA_SIZE],
                             struct cycle_timer_t inbound_time, struct cycle_timer_t outbound_time);
 
 void connection_close(struct connection_t *connection);

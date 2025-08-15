@@ -18,7 +18,7 @@ static void printHexLine(const char *line_label, uint8_t *input, uint32_t len)
     }
 }
 
-static void parseKey(const char *keyStr, uint8_t key[static PACKET_KEY_BYTE_SIZE])
+static void parseKey(const char *keyStr, uint8_t key[static PACKET_KEY_SIZE])
 {
     char *keyTok = strdup(keyStr);
     char *value = strtok(keyTok, " ");
@@ -48,9 +48,9 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    uint8_t key_data[PACKET_KEY_BYTE_SIZE];
+    uint8_t key_data[PACKET_KEY_SIZE];
     parseKey(argv[2], key_data);
-    printHexLine("Key: ", key_data, PACKET_KEY_BYTE_SIZE);
+    printHexLine("Key: ", key_data, PACKET_KEY_SIZE);
     printf("\n");
 
     struct aes_ctx_t *en = aes_ctx();
@@ -65,16 +65,19 @@ int main(int argc, char **argv)
     printf("Listening on port %s.\n", argv[1]);
     for (;;)
     {
-        uint8_t plaintext[CONNECTION_DATA_MAX_SIZE];
+        uint8_t plaintext[PACKET_BYTE_DATA_SIZE];
         uint32_t plaintext_len;
         uint32_t packet_id;
-        if (connection_receive_data_noalloc(server, &packet_id, plaintext, &plaintext_len))
+        enum packet_type_e aes_type;
+        if (connection_receive_data_noalloc(server, &packet_id, plaintext, &plaintext_len,
+                                            &aes_type))
         {
             perror("Could not receive data.\n");
             goto cleanup;
         }
 
-        printf("Packet Id: %u\t Data size: %u", packet_id, plaintext_len);
+        printf("Packet Id: %u\t Mode: %s\t Data size: %u", packet_id, packet_type_names[aes_type],
+               plaintext_len);
         // atomic_thread_fence will both be a compiler barrier (disallowing the compiler to reorder
         // instructions across the barrier) and a CPU barrier for that given thread (disallowing
         // the CPU to reorder instructions across the barrier).
@@ -84,7 +87,7 @@ int main(int argc, char **argv)
         flush_cache();
         // Declaring input/output variables after the cache flush as the performance benefit might
         // help in reducing timing noise.
-        uint8_t ciphertext[CONNECTION_DATA_MAX_SIZE + AES_BLOCK_SIZE];
+        uint8_t ciphertext[PACKET_BYTE_DATA_SIZE + AES_BLOCK_SIZE];
         size_t ciphertext_len;
 
         // Will encrypt only the first block of the plaintext, mimicking Bernstein's approach.
