@@ -19,7 +19,8 @@ int connection_receive_data_noalloc(struct connection_t *connection, uint32_t *p
 
 int connection_respond_back(struct connection_t *connection, uint32_t packet_id,
                             uint8_t data[static RESPONSE_DATA_SIZE],
-                            struct cycle_timer_t inbound_time, struct cycle_timer_t outbound_time);
+                            struct cycle_timer_t inbound_time, struct cycle_timer_t outbound_time,
+                            uint8_t iv[PACKET_AES_BLOCK_SIZE]);
 
 void connection_close(struct connection_t *connection);
 

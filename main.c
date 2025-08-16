@@ -8,28 +8,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
-static void printHexLine(const char *line_label, uint8_t *input, uint32_t len)
-{
-    printf("%s", line_label);
-    for (uint32_t i = 0; i < len; ++i)
-    {
-        printf("%02X ", (unsigned int)input[i]);
-    }
-}
+static void print_hex_line(const char *line_label, uint8_t *input, uint32_t len);
 
-static void parseKey(const char *keyStr, uint8_t key[static PACKET_KEY_SIZE])
+static void parse_key(const char *keyStr, uint8_t key[PACKET_KEY_SIZE]);
+
+static void fill_random(uint8_t data[static 1], size_t len);
+
+struct in_out_time_t
 {
-    char *keyTok = strdup(keyStr);
-    char *value = strtok(keyTok, " ");
-    unsigned index = 0;
-    while (value)
-    {
-        key[index++] = strtoul(value, NULL, 16);
-        value = strtok(NULL, " ");
-    }
-    free(keyTok);
-}
+    struct cycle_timer_t inbound;
+    struct cycle_timer_t outbound;
+};
+
+static int construct_aes_ctx(struct aes_ctx_t *en[1], struct aes_ctx_t *de[1],
+                             uint8_t key[PACKET_KEY_SIZE], enum packet_type_e aes_type);
+
+static struct in_out_time_t encrypt_and_time_ecb(struct aes_ctx_t *en, uint8_t plaintext[static 1],
+                                                 size_t plain_len,
+                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
+                                                 size_t cipher_len[1]);
+
+static struct in_out_time_t encrypt_and_time_cbc(struct aes_ctx_t *en, uint8_t plaintext[static 1],
+                                                 size_t plain_len,
+                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
+                                                 size_t cipher_len[1], uint8_t iv[AES_BLOCK_SIZE]);
+
+static struct in_out_time_t encrypt_and_time_ctr(struct aes_ctx_t *en, uint8_t plaintext[static 1],
+                                                 size_t plain_len,
+                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
+                                                 size_t cipher_len[1], uint8_t iv[AES_BLOCK_SIZE]);
 
 int main(int argc, char **argv)
 {
@@ -49,18 +58,18 @@ int main(int argc, char **argv)
     }
 
     uint8_t key_data[PACKET_KEY_SIZE];
-    parseKey(argv[2], key_data);
-    printHexLine("Key: ", key_data, PACKET_KEY_SIZE);
+    parse_key(argv[2], key_data);
+    print_hex_line("Key: ", key_data, PACKET_KEY_SIZE);
     printf("\n");
 
-    struct aes_ctx_t *en = aes_ctx();
-    struct aes_ctx_t *de = aes_ctx();
+    srand(time(NULL));
 
-    if (aes_ecb_init(en, de, key_data))
-    {
-        perror("Could not initialize AES cipher.\n");
-        goto cleanup;
-    }
+    struct aes_ctx_t *en_ecb, *de_ecb;
+    construct_aes_ctx(&en_ecb, &de_ecb, key_data, packet_type_e_ECB);
+    struct aes_ctx_t *en_cbc, *de_cbc;
+    construct_aes_ctx(&en_cbc, &de_cbc, key_data, packet_type_e_CBC);
+    struct aes_ctx_t *en_ctr, *de_ctr;
+    construct_aes_ctx(&en_ctr, &de_ctr, key_data, packet_type_e_CTR);
 
     printf("Listening on port %s.\n", argv[1]);
     for (;;)
@@ -78,41 +87,170 @@ int main(int argc, char **argv)
 
         printf("Packet Id: %u\t Mode: %s\t Data size: %u", packet_id, packet_type_names[aes_type],
                plaintext_len);
-        // atomic_thread_fence will both be a compiler barrier (disallowing the compiler to reorder
-        // instructions across the barrier) and a CPU barrier for that given thread (disallowing
-        // the CPU to reorder instructions across the barrier).
-        atomic_thread_fence(memory_order_seq_cst);
-        // Flushing the cache to minimize possible timing interference from previous cached
-        // encryption runs.
-        flush_cache();
-        // Declaring input/output variables after the cache flush as the performance benefit might
-        // help in reducing timing noise.
-        uint8_t ciphertext[PACKET_BYTE_DATA_SIZE + AES_BLOCK_SIZE];
-        size_t ciphertext_len;
 
+        uint8_t ciphertext[PACKET_BYTE_DATA_SIZE + AES_BLOCK_SIZE];
+        size_t ciphertext_len = 0;
         // Will encrypt only the first block of the plaintext, mimicking Bernstein's approach.
         const uint8_t encryption_length =
             plaintext_len < AES_BLOCK_SIZE ? plaintext_len : AES_BLOCK_SIZE;
 
-        const struct cycle_timer_t inbound_time = time_start();
+        uint8_t iv[PACKET_AES_BLOCK_SIZE];
+        if (aes_type != packet_type_e_ECB)
+            fill_random(iv, PACKET_AES_BLOCK_SIZE);
 
-        aes_ecb_encrypt(en, plaintext, encryption_length, ciphertext, &ciphertext_len);
+        struct in_out_time_t timing_result;
+        // Using different functions for every AES block mode in order to easily keep a constant
+        // context through the whole application lifetime.
+        //
+        // It has been observed that a constantly chaning ctx results in a different memory
+        // behaviour (i.e doppelganger vs victim). This behaviour difference must be protected.
+        //
+        // The downside of code duplication is a necessay evil.
+        switch (aes_type)
+        {
+            case packet_type_e_ECB:
+                timing_result = encrypt_and_time_ecb(en_ecb, plaintext, encryption_length,
+                                                     ciphertext, &ciphertext_len);
+                break;
+            case packet_type_e_CBC:
+                timing_result = encrypt_and_time_cbc(en_ecb, plaintext, encryption_length,
+                                                     ciphertext, &ciphertext_len, iv);
+                break;
+            case packet_type_e_CTR:
+                timing_result = encrypt_and_time_ctr(en_ctr, plaintext, encryption_length,
+                                                     ciphertext, &ciphertext_len, iv);
+                break;
+            default:
+                fprintf(stderr, "Do not know how to encrypt AES type: %u (%s)\n", aes_type,
+                        (aes_type < packet_type_e_COUNT) ? packet_type_names[aes_type]
+                                                         : "Corrupted value!");
+                memset(&timing_result, 0, sizeof(timing_result));
+                break;
+        }
 
-        const struct cycle_timer_t outbound_time = time_end();
-        atomic_thread_fence(memory_order_seq_cst);
-
-        if (connection_respond_back(server, packet_id, ciphertext, inbound_time, outbound_time))
+        if (connection_respond_back(server, packet_id, ciphertext, timing_result.inbound,
+                                    timing_result.outbound, iv))
         {
             perror("Could not send back timing response.\n");
             goto cleanup;
         }
-        printf("\t %ld.%ld -> %ld.%ld\n", inbound_time.t1, inbound_time.t2, outbound_time.t1,
-               outbound_time.t2);
+        printf("\t %ld.%ld -> %ld.%ld\n", timing_result.inbound.t1, timing_result.inbound.t2,
+               timing_result.outbound.t1, timing_result.outbound.t2);
     }
 
 cleanup:
-    aes_ctx_clean(en);
-    aes_ctx_clean(de);
+    aes_ctx_clean(en_ecb);
+    aes_ctx_clean(de_ecb);
     connection_cleanup(&server);
     return EXIT_FAILURE;
+}
+
+static void print_hex_line(const char *line_label, uint8_t *input, uint32_t len)
+{
+    printf("%s", line_label);
+    for (uint32_t i = 0; i < len; ++i)
+        printf("%02X ", (unsigned int)input[i]);
+}
+
+static void parse_key(const char *keyStr, uint8_t key[PACKET_KEY_SIZE])
+{
+    char *keyTok = strdup(keyStr);
+    char *value = strtok(keyTok, " ");
+    unsigned index = 0;
+    while (value && index < PACKET_KEY_SIZE)
+    {
+        key[index++] = strtoul(value, NULL, 16);
+        value = strtok(NULL, " ");
+    }
+    free(keyTok);
+}
+
+static void fill_random(uint8_t data[static 1], size_t len)
+{
+    for (size_t i = 0; i < len; ++i)
+        data[i] = rand() % 256; // TODO: can we just trim the int value to uint8_t ?
+}
+
+static int construct_aes_ctx(struct aes_ctx_t *en[1], struct aes_ctx_t *de[1],
+                             uint8_t key[PACKET_KEY_SIZE], enum packet_type_e aes_type)
+{
+    *en = aes_ctx();
+    *de = aes_ctx();
+    switch (aes_type)
+    {
+        case packet_type_e_ECB:
+            if (aes_ecb_init(*en, *de, key))
+                goto cleanup;
+            break;
+        case packet_type_e_CBC:
+            if (aes_cbc_init(*en, *de, key))
+                goto cleanup;
+            break;
+        case packet_type_e_CTR:
+            if (aes_ctr_init(*en, *de, key))
+                goto cleanup;
+            break;
+        default:
+            fprintf(stderr, "Do not know how to init ctx for AES type: %u (%s)\n", aes_type,
+                    (aes_type < packet_type_e_COUNT) ? packet_type_names[aes_type]
+                                                     : "Corrupted value!");
+            break;
+    }
+    return 0;
+cleanup:
+    *en = NULL;
+    *de = NULL;
+    fprintf(stderr, "Could not initialize AES context. Internal failure.\n");
+    return -1;
+}
+
+// Macro that defines the common code inside all encrypt_and_time calls, before the encryption call
+// to the specific mode.
+#define ENCRYPT_AND_TIME_START                                                                     \
+    /* atomic_thread_fence will both be a compiler barrier (disallowing the compiler to reorder*/  \
+    /* instructions across the barrier) and a CPU barrier for that given thread (disallowing*/     \
+    /* the CPU to reorder instructions across the barrier). */                                     \
+    atomic_thread_fence(memory_order_seq_cst);                                                     \
+    /* Flushing the cache to minimize possible timing interference from previous cached*/          \
+    /* encryption runs.*/                                                                          \
+    flush_cache();                                                                                 \
+    const struct cycle_timer_t inbound_time = time_start();
+
+// Macro that defines the common code inside all encrypt_and_time calls, after the encryption call
+// to the specific mode.
+#define ENCRYPT_AND_TIME_END                                                                       \
+    const struct cycle_timer_t outbound_time = time_end();                                         \
+    atomic_thread_fence(memory_order_seq_cst);                                                     \
+    return (struct in_out_time_t) {.inbound = inbound_time, .outbound = outbound_time};
+
+static struct in_out_time_t encrypt_and_time_ecb(struct aes_ctx_t *en, uint8_t plaintext[static 1],
+                                                 size_t plain_len,
+                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
+                                                 size_t cipher_len[1])
+{
+    ENCRYPT_AND_TIME_START
+    aes_ecb_encrypt(en, plaintext, plain_len, ciphertext, cipher_len);
+    ENCRYPT_AND_TIME_END
+}
+
+static struct in_out_time_t encrypt_and_time_cbc(struct aes_ctx_t *en, uint8_t plaintext[static 1],
+                                                 size_t plain_len,
+                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
+                                                 size_t cipher_len[1], uint8_t iv[AES_BLOCK_SIZE])
+{
+    aes_cbc_set_iv(en, iv);
+    ENCRYPT_AND_TIME_START
+    aes_cbc_encrypt(en, plaintext, plain_len, ciphertext, cipher_len);
+    ENCRYPT_AND_TIME_END
+}
+
+static struct in_out_time_t encrypt_and_time_ctr(struct aes_ctx_t *en, uint8_t plaintext[static 1],
+                                                 size_t plain_len,
+                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
+                                                 size_t cipher_len[1], uint8_t iv[AES_BLOCK_SIZE])
+{
+    aes_ctr_set_iv(en, iv);
+    ENCRYPT_AND_TIME_START
+    aes_ctr_encrypt(en, plaintext, plain_len, ciphertext, cipher_len);
+    ENCRYPT_AND_TIME_END
 }
