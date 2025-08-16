@@ -1,7 +1,12 @@
 #include "aes_interface.h"
-
 #include "openssl/aes.h"
 #include "openssl/evp.h"
+
+const bool aes_ecb_flag = true;
+const bool aes_cbc_flag = false;
+const bool aes_ctr_flag = false;
+const bool aes_ofb_flag = false;
+const bool aes_cfb_flag = false;
 
 struct aes_ctx_t
 {
@@ -15,8 +20,8 @@ struct aes_ctx_t *aes_ctx(void)
     return aes_context;
 }
 
-int aes_init(struct aes_ctx_t *encrypt_ctx,
-             struct aes_ctx_t *decrypt_ctx, uint8_t key[static AES_BLOCK_SIZE])
+int aes_ecb_init(struct aes_ctx_t *encrypt_ctx, struct aes_ctx_t *decrypt_ctx,
+                 uint8_t key[static AES_BLOCK_SIZE])
 {
     EVP_EncryptInit_ex(encrypt_ctx->ctx, EVP_aes_128_ecb(), NULL, key, NULL);
     EVP_DecryptInit_ex(decrypt_ctx->ctx, EVP_aes_128_ecb(), NULL, key, NULL);
@@ -24,8 +29,8 @@ int aes_init(struct aes_ctx_t *encrypt_ctx,
     return 0;
 }
 
-void aes_encrypt(struct aes_ctx_t *encrypt_ctx, uint8_t *plaintext, size_t plaintext_len, uint8_t *ciphertext,
-                 size_t *ciphertext_len)
+void aes_ecb_encrypt(struct aes_ctx_t *encrypt_ctx, uint8_t *plaintext, size_t plaintext_len,
+                     uint8_t *ciphertext, size_t *ciphertext_len)
 {
     /* max ciphertext len for a n bytes of plaintext is n + AES_BLOCK_SIZE -1
      * bytes */
@@ -43,8 +48,8 @@ void aes_encrypt(struct aes_ctx_t *encrypt_ctx, uint8_t *plaintext, size_t plain
     *ciphertext_len = c_len + f_len;
 }
 
-void aes_decrypt(struct aes_ctx_t *decrypt_ctx, uint8_t *ciphertext,
-                           size_t ciphertext_len, uint8_t *plaintext, size_t *plaintext_len)
+void aes_ecb_decrypt(struct aes_ctx_t *decrypt_ctx, uint8_t *ciphertext, size_t ciphertext_len,
+                     uint8_t *plaintext, size_t *plaintext_len)
 {
     /* plaintext will always be equal to or lesser than length of ciphertext*/
     int p_len = ciphertext_len, f_len = 0;
@@ -56,7 +61,11 @@ void aes_decrypt(struct aes_ctx_t *decrypt_ctx, uint8_t *ciphertext,
     *plaintext_len = p_len + f_len;
 }
 
-void aes_clean(struct aes_ctx_t *ctx) { EVP_CIPHER_CTX_free(ctx->ctx); free(ctx); }
+void aes_clean(struct aes_ctx_t *ctx)
+{
+    EVP_CIPHER_CTX_free(ctx->ctx);
+    free(ctx);
+}
 
 #if defined __x86_64__
 extern unsigned int OPENSSL_ia32cap_P[];
@@ -71,5 +80,10 @@ void aes_log_status(FILE *stream)
         fprintf(stream, "Using AES-NI, not good.\n");
     else
         fprintf(stream, "Not using AES-NI, good.\n");
+    fprintf(stream, "ECB: %d\n", aes_ecb_flag);
+    fprintf(stream, "CBC: %d\n", aes_cbc_flag);
+    fprintf(stream, "CTR: %d\n", aes_ctr_flag);
+    fprintf(stream, "OFB: %d\n", aes_ofb_flag);
+    fprintf(stream, "CFB: %d\n", aes_cfb_flag);
 #endif
 }

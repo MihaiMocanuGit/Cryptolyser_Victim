@@ -56,7 +56,7 @@ int main(int argc, char **argv)
     struct aes_ctx_t *en = aes_ctx();
     struct aes_ctx_t *de = aes_ctx();
 
-    if (aes_init(en, de, key_data))
+    if (aes_ecb_init(en, de, key_data))
     {
         perror("Could not initialize AES cipher.\n");
         goto cleanup;
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 
         const struct cycle_timer_t inbound_time = time_start();
 
-        aes_encrypt(en, plaintext, encryption_length, ciphertext, &ciphertext_len);
+        aes_ecb_encrypt(en, plaintext, encryption_length, ciphertext, &ciphertext_len);
 
         const struct cycle_timer_t outbound_time = time_end();
         atomic_thread_fence(memory_order_seq_cst);
@@ -111,8 +111,8 @@ int main(int argc, char **argv)
     }
 
 cleanup:
-    aes_clean(en);
-    aes_clean(de);
+    aes_ctx_clean(en);
+    aes_ctx_clean(de);
     connection_cleanup(&server);
     return EXIT_FAILURE;
 }
