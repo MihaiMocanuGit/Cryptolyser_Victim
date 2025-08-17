@@ -84,9 +84,10 @@ int main(int argc, char **argv)
             perror("Could not receive data.\n");
             goto cleanup;
         }
-
-        printf("Packet Id: %u\t Mode: %s\t Data size: %u", packet_id, packet_type_names[aes_type],
+#ifndef NDEBUG
+        printf("Packet Id: %u\t Mode: %s\t Data size: %u\n", packet_id, packet_type_names[aes_type],
                plaintext_len);
+#endif
 
         uint8_t ciphertext[PACKET_BYTE_DATA_SIZE + AES_BLOCK_SIZE];
         size_t ciphertext_len = 0;
@@ -134,8 +135,10 @@ int main(int argc, char **argv)
             perror("Could not send back timing response.\n");
             goto cleanup;
         }
+#ifndef NDEBUG
         printf("\t %ld.%ld -> %ld.%ld\n", timing_result.inbound.t1, timing_result.inbound.t2,
                timing_result.outbound.t1, timing_result.outbound.t2);
+#endif
     }
 
 cleanup:
