@@ -40,12 +40,14 @@ void flush_cache(void)
     // The values of 0 and 1 block any unrolling of the loop.
     // Reference:
     // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#index-pragma-GCC-unroll-n
+#if defined CACHE_FLUSH_DO_UNROLL
 #if defined __aarch64__
 #pragma GCC unroll((64 + 1024) * 1024 * 2 / 64)
 #elif defined __x86_64__
 #pragma GCC unroll((32 + 256) * 1024 * 2 / 64)
-#else
+#elif
 #pragma GCC unroll((32 * 1024 * 2) / 32)
+#endif
 #endif
     for (size_t cache_line_start = 0; cache_line_start < CACHE_SIZE;
          cache_line_start += CACHE_LINE_SIZE)
@@ -72,9 +74,9 @@ void flush_cache(void)
 // same memory addresses. This is the main reason behind the memory barrier.
 cleanup:
     for (int i = 0; i < HEAP_CACHE_LINES; ++i)
-    {
         free((char *)cache_lines[i]);
-    }
     free(cache_lines);
     atomic_thread_fence(memory_order_seq_cst);
 }
+
+#undef CACHE_FLUSH_DO_UNROLL
