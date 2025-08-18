@@ -79,7 +79,7 @@ int main(int argc, char **argv)
         uint32_t packet_id;
         enum packet_type_e aes_type;
         if (connection_receive_data_noalloc(server, &packet_id, plaintext, &plaintext_len,
-                                            &aes_type))
+                                            &aes_type, NULL))
         {
             perror("Could not receive data.\n");
             goto cleanup;

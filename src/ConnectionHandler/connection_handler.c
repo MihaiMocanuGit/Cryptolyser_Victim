@@ -68,7 +68,8 @@ int connection_reopen_socket(struct connection_t *connection)
 }
 
 int connection_receive_data_noalloc(struct connection_t *connection, uint32_t *packet_id,
-                                    uint8_t *data, uint32_t *data_len, enum packet_type_e *aes_type)
+                                    uint8_t *data, uint32_t *data_len, enum packet_type_e *aes_type,
+                                    uint8_t *key)
 {
     struct connection_packet_t packet;
     socklen_t sender_len = sizeof(connection->sender_addr);
@@ -81,11 +82,13 @@ int connection_receive_data_noalloc(struct connection_t *connection, uint32_t *p
     *data_len = be32toh(packet.data_length);
     memcpy(data, packet.byte_data, *data_len);
     *aes_type = packet.packet_type;
+    if (key)
+        memcpy(key, packet.key, PACKET_KEY_SIZE);
     return 0;
 }
 
 int connection_receive_data(struct connection_t *connection, uint32_t *packet_id, uint8_t **data,
-                            uint32_t *data_len, enum packet_type_e *aes_type)
+                            uint32_t *data_len, enum packet_type_e *aes_type, uint8_t *key)
 {
     struct connection_packet_t packet;
     socklen_t sender_len = sizeof(connection->sender_addr);
@@ -101,6 +104,8 @@ int connection_receive_data(struct connection_t *connection, uint32_t *packet_id
         return errno;
     memcpy(data, packet.byte_data, *data_len);
     *aes_type = packet.packet_type;
+    if (key)
+        memcpy(key, packet.key, PACKET_KEY_SIZE);
     return 0;
 }
 
