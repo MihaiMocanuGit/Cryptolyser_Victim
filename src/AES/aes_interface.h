@@ -1,5 +1,4 @@
-#ifndef CRYPTOLYSER_VICTIM_AES_AES_H_
-#define CRYPTOLYSER_VICTIM_AES_AES_H_
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -85,5 +84,3 @@ void aes_ctr_decrypt(struct aes_ctx_t *decrypt_ctx, uint8_t *ciphertext, size_t 
                      uint8_t *plaintext, size_t *plaintext_len);
 
 void aes_ctr_clean(struct aes_ctx_t *ctx);
-
-#endif // CRYPTOLYSER_VICTIM_AES_AES_H_

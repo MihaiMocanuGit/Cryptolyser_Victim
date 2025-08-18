@@ -1,5 +1,4 @@
-#ifndef CRYPTOLYSER_VICTIM_CONNECTIONHANDLER_CONNECTION_HANDLER_H
-#define CRYPTOLYSER_VICTIM_CONNECTIONHANDLER_CONNECTION_HANDLER_H
+#pragma once
 
 #include "Cryptolyser_Common/connection_data_types.h"
 #include "Cryptolyser_Common/cycle_timer.h"
@@ -25,5 +24,3 @@ int connection_respond_back(struct connection_t *connection, uint32_t packet_id,
 void connection_close(struct connection_t *connection);
 
 void connection_cleanup(struct connection_t **connection);
-
-#endif // CRYPTOLYSER_VICTIM_CONNECTIONHANDLER_CONNECTION_HANDLER_H
