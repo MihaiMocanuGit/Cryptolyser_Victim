@@ -10,7 +10,7 @@
 #include <string.h>
 #include <time.h>
 
-static void print_hex_line(const char *line_label, uint8_t *input, uint32_t len);
+static void print_hex_line(const char *line_label, const uint8_t *input, uint32_t len);
 
 static void parse_key(const char *keyStr, uint8_t key[PACKET_KEY_SIZE]);
 
@@ -23,22 +23,21 @@ struct in_out_time_t
 };
 
 static int construct_aes_ctx(struct aes_ctx_t *en[1], struct aes_ctx_t *de[1],
-                             uint8_t key[PACKET_KEY_SIZE], enum packet_type_e aes_type);
+                             const uint8_t key[PACKET_KEY_SIZE], enum packet_type_e aes_type);
 
-static struct in_out_time_t encrypt_and_time_ecb(struct aes_ctx_t *en, uint8_t plaintext[static 1],
-                                                 size_t plain_len,
-                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
-                                                 size_t cipher_len[1]);
+static struct in_out_time_t
+    encrypt_and_time_ecb(struct aes_ctx_t *en, const uint8_t plaintext[static 1], size_t plain_len,
+                         uint8_t ciphertext[static AES_BLOCK_SIZE], size_t cipher_len[1]);
 
-static struct in_out_time_t encrypt_and_time_cbc(struct aes_ctx_t *en, uint8_t plaintext[static 1],
-                                                 size_t plain_len,
-                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
-                                                 size_t cipher_len[1], uint8_t iv[AES_BLOCK_SIZE]);
+static struct in_out_time_t
+    encrypt_and_time_cbc(struct aes_ctx_t *en, const uint8_t plaintext[static 1], size_t plain_len,
+                         uint8_t ciphertext[static AES_BLOCK_SIZE], size_t cipher_len[1],
+                         const uint8_t iv[AES_BLOCK_SIZE]);
 
-static struct in_out_time_t encrypt_and_time_ctr(struct aes_ctx_t *en, uint8_t plaintext[static 1],
-                                                 size_t plain_len,
-                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
-                                                 size_t cipher_len[1], uint8_t iv[AES_BLOCK_SIZE]);
+static struct in_out_time_t
+    encrypt_and_time_ctr(struct aes_ctx_t *en, const uint8_t plaintext[static 1], size_t plain_len,
+                         uint8_t ciphertext[static AES_BLOCK_SIZE], size_t cipher_len[1],
+                         const uint8_t iv[AES_BLOCK_SIZE]);
 
 int main(int argc, char **argv)
 {
@@ -148,7 +147,7 @@ cleanup:
     return EXIT_FAILURE;
 }
 
-static void print_hex_line(const char *line_label, uint8_t *input, uint32_t len)
+static void print_hex_line(const char *line_label, const uint8_t *input, uint32_t len)
 {
     printf("%s", line_label);
     for (uint32_t i = 0; i < len; ++i)
@@ -175,7 +174,7 @@ static void fill_random(uint8_t data[static 1], size_t len)
 }
 
 static int construct_aes_ctx(struct aes_ctx_t *en[1], struct aes_ctx_t *de[1],
-                             uint8_t key[PACKET_KEY_SIZE], enum packet_type_e aes_type)
+                             const uint8_t key[PACKET_KEY_SIZE], enum packet_type_e aes_type)
 {
     *en = aes_ctx();
     *de = aes_ctx();
@@ -226,20 +225,19 @@ cleanup:
     atomic_thread_fence(memory_order_seq_cst);                                                     \
     return (struct in_out_time_t) {.inbound = inbound_time, .outbound = outbound_time};
 
-static struct in_out_time_t encrypt_and_time_ecb(struct aes_ctx_t *en, uint8_t plaintext[static 1],
-                                                 size_t plain_len,
-                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
-                                                 size_t cipher_len[1])
+static struct in_out_time_t
+    encrypt_and_time_ecb(struct aes_ctx_t *en, const uint8_t plaintext[static 1], size_t plain_len,
+                         uint8_t ciphertext[static AES_BLOCK_SIZE], size_t cipher_len[1])
 {
     ENCRYPT_AND_TIME_START
     aes_ecb_encrypt(en, plaintext, plain_len, ciphertext, cipher_len);
     ENCRYPT_AND_TIME_END
 }
 
-static struct in_out_time_t encrypt_and_time_cbc(struct aes_ctx_t *en, uint8_t plaintext[static 1],
-                                                 size_t plain_len,
-                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
-                                                 size_t cipher_len[1], uint8_t iv[AES_BLOCK_SIZE])
+static struct in_out_time_t
+    encrypt_and_time_cbc(struct aes_ctx_t *en, const uint8_t plaintext[static 1], size_t plain_len,
+                         uint8_t ciphertext[static AES_BLOCK_SIZE], size_t cipher_len[1],
+                         const uint8_t iv[AES_BLOCK_SIZE])
 {
     aes_cbc_set_iv(en, iv);
     ENCRYPT_AND_TIME_START
@@ -247,10 +245,10 @@ static struct in_out_time_t encrypt_and_time_cbc(struct aes_ctx_t *en, uint8_t p
     ENCRYPT_AND_TIME_END
 }
 
-static struct in_out_time_t encrypt_and_time_ctr(struct aes_ctx_t *en, uint8_t plaintext[static 1],
-                                                 size_t plain_len,
-                                                 uint8_t ciphertext[static AES_BLOCK_SIZE],
-                                                 size_t cipher_len[1], uint8_t iv[AES_BLOCK_SIZE])
+static struct in_out_time_t
+    encrypt_and_time_ctr(struct aes_ctx_t *en, const uint8_t plaintext[static 1], size_t plain_len,
+                         uint8_t ciphertext[static AES_BLOCK_SIZE], size_t cipher_len[1],
+                         const uint8_t iv[AES_BLOCK_SIZE])
 {
     aes_ctr_set_iv(en, iv);
     ENCRYPT_AND_TIME_START

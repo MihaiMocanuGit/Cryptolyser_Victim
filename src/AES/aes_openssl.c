@@ -21,7 +21,7 @@ struct aes_ctx_t *aes_ctx(void)
 }
 
 int aes_ecb_init(struct aes_ctx_t *encrypt_ctx, struct aes_ctx_t *decrypt_ctx,
-                 uint8_t key[static AES_BLOCK_SIZE])
+                 const uint8_t key[static AES_BLOCK_SIZE])
 {
     EVP_EncryptInit_ex(encrypt_ctx->ctx, EVP_aes_128_ecb(), NULL, key, NULL);
     EVP_DecryptInit_ex(decrypt_ctx->ctx, EVP_aes_128_ecb(), NULL, key, NULL);
@@ -29,7 +29,7 @@ int aes_ecb_init(struct aes_ctx_t *encrypt_ctx, struct aes_ctx_t *decrypt_ctx,
     return 0;
 }
 
-void aes_ecb_encrypt(struct aes_ctx_t *encrypt_ctx, uint8_t *plaintext, size_t plaintext_len,
+void aes_ecb_encrypt(struct aes_ctx_t *encrypt_ctx, const uint8_t *plaintext, size_t plaintext_len,
                      uint8_t *ciphertext, size_t *ciphertext_len)
 {
     /* max ciphertext len for a n bytes of plaintext is n + AES_BLOCK_SIZE -1
@@ -48,8 +48,8 @@ void aes_ecb_encrypt(struct aes_ctx_t *encrypt_ctx, uint8_t *plaintext, size_t p
     *ciphertext_len = c_len + f_len;
 }
 
-void aes_ecb_decrypt(struct aes_ctx_t *decrypt_ctx, uint8_t *ciphertext, size_t ciphertext_len,
-                     uint8_t *plaintext, size_t *plaintext_len)
+void aes_ecb_decrypt(struct aes_ctx_t *decrypt_ctx, const uint8_t *ciphertext,
+                     size_t ciphertext_len, uint8_t *plaintext, size_t *plaintext_len)
 {
     /* plaintext will always be equal to or lesser than length of ciphertext*/
     int p_len = ciphertext_len, f_len = 0;
